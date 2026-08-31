@@ -1,0 +1,12 @@
+name: RaidEvent
+version: '${version}'
+main: io.github.raidevent.RaidEventPlugin
+api-version: '1.21'
+description: プレイヤー周辺にウェーブ制レイドイベントを発生させる Paper プラグイン
+permissions:
+  raidevent.use:
+    description: 進行中のレイドの確認 (/raidevent)
+    default: true
+  raidevent.admin:
+    description: レイドの生成・キャンセルと設定のリロード (/raidevent spawn|cancel|reload|status)
+    default: op

@@ -1,0 +1,6 @@
+/run/
+build/
+.gradle/
+
+# E2E のヘッドレスクライアントの依存
+e2e/bot/node_modules/

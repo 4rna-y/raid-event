@@ -11,6 +11,7 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -28,7 +29,10 @@ import org.bukkit.plugin.Plugin;
  *   <li>{@code setRemoveWhenFarAway(true)}。API スポーンのモブは既定でデスポーンしない
  *       ことがあるが、「逃げられたらデスポーン→キャンセル」の仕様はデスポーンが
  *       生きていないと成立しない。</li>
- *   <li>アンデッドは昼でも燃えないようにする。燃えると昼レイドが自壊する。</li>
+ *   <li>日光で燃えないようにする。燃えると昼レイドが自壊する。ここで立てる
+ *       {@code setShouldBurnInDay(false)} は型ごとの取りこぼしがあるので、
+ *       最後の砦として {@link RaidListener} が日光由来の {@code EntityCombustEvent} を
+ *       レイドモブについて丸ごと弾く。</li>
  * </ul>
  */
 final class MobSpawner {
@@ -65,6 +69,9 @@ final class MobSpawner {
         }
         if (mob instanceof AbstractSkeleton skeleton) {
             skeleton.setShouldBurnInDay(false);
+        }
+        if (mob instanceof Phantom phantom) {
+            phantom.setShouldBurnInDay(false);
         }
 
         equip(mob, entry, plugin);

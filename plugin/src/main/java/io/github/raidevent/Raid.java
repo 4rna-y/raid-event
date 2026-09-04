@@ -21,6 +21,8 @@ final class Raid {
         ACTIVE,
     }
 
+    /** この1件を指す id。配った地図に焼き込んでおき、回収時の目印にする。 */
+    final UUID id = UUID.randomUUID();
     final Location site;
     final int tier;
     final String crateId;

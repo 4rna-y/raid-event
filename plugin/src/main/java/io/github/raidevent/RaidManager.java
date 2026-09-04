@@ -151,6 +151,8 @@ public final class RaidManager {
                 .anyMatch(MobSpawner::isSurvivalLike);
         if (near) {
             current.state = Raid.State.ACTIVE;
+            // 発火したらもう地図の役目は終わり。回収してから始める
+            revokeMaps("発動");
             broadcast("<red>レイド開始! モンスターの襲撃を退けろ。");
             spawnWave(world);
         }
@@ -216,7 +218,7 @@ public final class RaidManager {
         current = new Raid(site, tier, crateId, night,
                 world.getFullTime() + settings.expireTicks());
         String crateName = crates.crate(crateId).displayName();
-        MapService.give(eligible, current, crateName);
+        MapService.give(plugin, eligible, current, crateName);
         broadcast("<yellow>レイドが発生した! 配られた地図を確認せよ。"
                 + " <gray>(" + crateName + " / Tier " + tier + ")");
         plugin.getSLF4JLogger().info("レイド生成: tier={} crate={} night={} 地点=({}, {}, {})",
@@ -328,7 +330,21 @@ public final class RaidManager {
 
     private void clear() {
         hideBossBar();
+        // 失効・成功・キャンセル・停止のどれで終わっても、死んだ地点を指す地図は残さない
+        // (発動時に回収済みなら空振りするだけ)
+        revokeMaps("終了");
         current = null;
+    }
+
+    /** 現行レイドの地図を配布先から回収する。 */
+    private void revokeMaps(String reason) {
+        if (current == null) {
+            return;
+        }
+        int removed = MapService.revoke(plugin, current);
+        if (removed > 0) {
+            plugin.getSLF4JLogger().info("レイドの地図を {}枚 回収した ({})", removed, reason);
+        }
     }
 
     /** 停止時の後片付け。モブを残すとプラグイン無しの世界に強化モブが漂う。 */

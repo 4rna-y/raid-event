@@ -27,7 +27,7 @@ import org.bukkit.plugin.Plugin;
  * レイド地点を記した地図の配布。
  *
  * <p>死=ワールド消滅のサーバーでは「リスクを承知で挑むか」の判断材料を必ず与えるべき
- * なので、地図の名前と説明にクレート種・ティア・座標・昼夜を全部書く。
+ * なので、地図の名前と説明にクレート種・レベル・座標・昼夜を全部書く。
  *
  * <p>用済みになった地図 (発火済み・失効・キャンセル) は {@link #revoke} で回収する。
  * 死んだ地点を指す地図が手元に残ると、次のレイドの地図と紛らわしい。回収のために
@@ -69,14 +69,14 @@ final class MapService {
         if (stack.getItemMeta() instanceof MapMeta meta) {
             meta.setMapView(view);
             meta.displayName(Component.text("レイドの地図: ", NamedTextColor.GOLD)
-                    .append(Component.text(crateName + " (Tier " + raid.tier + ")",
+                    .append(Component.text(crateName + " (Level " + raid.level + ")",
                             NamedTextColor.YELLOW))
                     .decoration(TextDecoration.ITALIC, false));
             meta.lore(List.of(
                     Component.text("地点: (" + site.getBlockX() + ", " + site.getBlockY()
                             + ", " + site.getBlockZ() + ")", NamedTextColor.GRAY)
                             .decoration(TextDecoration.ITALIC, false),
-                    Component.text(raid.night ? "夜のレイド (高ティア)" : "昼のレイド",
+                    Component.text(raid.night ? "夜のレイド (高レベル)" : "昼のレイド",
                             raid.night ? NamedTextColor.DARK_PURPLE : NamedTextColor.GRAY)
                             .decoration(TextDecoration.ITALIC, false),
                     Component.text("有効期限: マインクラフト時間で半日", NamedTextColor.DARK_GRAY)

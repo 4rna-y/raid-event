@@ -44,8 +44,8 @@ final class MobSpawner {
     }
 
     /** 1体スポーンして味付けまで済ませる。Mob でない型が来たら null (設定ミス)。 */
-    static Mob spawn(Plugin plugin, Location location, TierTable.MobEntry entry,
-            TierTable.Tier tier, Random random) {
+    static Mob spawn(Plugin plugin, Location location, LevelTable.MobEntry entry,
+            LevelTable.Level level, Random random) {
         Entity entity = location.getWorld().spawnEntity(
                 location, entry.type(), CreatureSpawnEvent.SpawnReason.CUSTOM);
         if (!(entity instanceof Mob mob)) {
@@ -75,12 +75,12 @@ final class MobSpawner {
         }
 
         equip(mob, entry, plugin);
-        strengthen(plugin, mob, tier, baby);
+        strengthen(plugin, mob, level, baby);
         target(mob);
         return mob;
     }
 
-    private static void equip(Mob mob, TierTable.MobEntry entry, Plugin plugin) {
+    private static void equip(Mob mob, LevelTable.MobEntry entry, Plugin plugin) {
         EntityEquipment equipment = mob.getEquipment();
         if (equipment == null) {
             return;
@@ -112,16 +112,16 @@ final class MobSpawner {
         equipment.setItemInOffHandDropChance(0f);
     }
 
-    /** ティアの倍率を transient な attribute 修正で乗せる。子ゾンビは元から速いので speed は乗せない。 */
-    private static void strengthen(Plugin plugin, Mob mob, TierTable.Tier tier, boolean baby) {
-        scale(mob, Attribute.MAX_HEALTH, new NamespacedKey(plugin, "tier-health"), tier.health());
+    /** レベルの倍率を transient な attribute 修正で乗せる。子ゾンビは元から速いので speed は乗せない。 */
+    private static void strengthen(Plugin plugin, Mob mob, LevelTable.Level level, boolean baby) {
+        scale(mob, Attribute.MAX_HEALTH, new NamespacedKey(plugin, "level-health"), level.health());
         AttributeInstance health = mob.getAttribute(Attribute.MAX_HEALTH);
         if (health != null) {
             mob.setHealth(health.getValue());
         }
-        scale(mob, Attribute.ATTACK_DAMAGE, new NamespacedKey(plugin, "tier-damage"), tier.damage());
+        scale(mob, Attribute.ATTACK_DAMAGE, new NamespacedKey(plugin, "level-damage"), level.damage());
         if (!baby) {
-            scale(mob, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "tier-speed"), tier.speed());
+            scale(mob, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "level-speed"), level.speed());
         }
     }
 

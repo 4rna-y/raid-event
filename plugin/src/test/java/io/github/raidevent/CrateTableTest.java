@@ -23,46 +23,46 @@ class CrateTableTest {
     }
 
     @Test
-    @DisplayName("各クレートに5ティアあり、pool は空でない")
-    void fiveTiersEach() {
+    @DisplayName("各クレートに5レベルあり、pool は空でない")
+    void fiveLevelsEach() {
         for (CrateTable.Crate crate : table.crates().values()) {
-            assertEquals(5, crate.tiers().size(), crate.id());
-            for (var tier : crate.tiers().values()) {
-                assertFalse(tier.pool().isEmpty());
+            assertEquals(5, crate.levels().size(), crate.id());
+            for (var level : crate.levels().values()) {
+                assertFalse(level.pool().isEmpty());
             }
         }
     }
 
     @Test
-    @DisplayName("T4 と T5 には目玉確定枠 (featured) がある")
-    void featuredOnHighTiers() {
+    @DisplayName("L4 と L5 には目玉確定枠 (featured) がある")
+    void featuredOnHighLevels() {
         for (CrateTable.Crate crate : table.crates().values()) {
             for (int number = 1; number <= 3; number++) {
-                assertTrue(crate.tier(number).featured().isEmpty(),
+                assertTrue(crate.level(number).featured().isEmpty(),
                         crate.id() + " T" + number + " に featured は要らない");
             }
             for (int number = 4; number <= 5; number++) {
-                assertFalse(crate.tier(number).featured().isEmpty(),
+                assertFalse(crate.level(number).featured().isEmpty(),
                         crate.id() + " T" + number + " には目玉確定枠が要る");
             }
         }
     }
 
     @Test
-    @DisplayName("充填スロット数はティアで単調に増える")
-    void slotsGrowWithTier() {
+    @DisplayName("充填スロット数はレベルで単調に増える")
+    void slotsGrowWithLevel() {
         for (CrateTable.Crate crate : table.crates().values()) {
             for (int number = 2; number <= 5; number++) {
-                assertTrue(crate.tier(number).slotsMin() >= crate.tier(number - 1).slotsMin());
-                assertTrue(crate.tier(number).slotsMax() >= crate.tier(number - 1).slotsMax());
+                assertTrue(crate.level(number).slotsMin() >= crate.level(number - 1).slotsMin());
+                assertTrue(crate.level(number).slotsMax() >= crate.level(number - 1).slotsMax());
             }
         }
     }
 
     @Test
-    @DisplayName("修繕はマジカル T5 の目玉枠に入っている")
+    @DisplayName("修繕はマジカル L5 の目玉枠に入っている")
     void mendingIsMagicalT5Featured() {
-        List<CrateTable.LootEntry> featured = table.crate("magical").tier(5).featured();
+        List<CrateTable.LootEntry> featured = table.crate("magical").level(5).featured();
         assertTrue(featured.stream().anyMatch(e -> e.enchants().containsKey("mending")),
                 "修繕が目玉枠に無い");
     }
@@ -73,14 +73,14 @@ class CrateTableTest {
         Random random = new Random(42);
         for (CrateTable.Crate crate : table.crates().values()) {
             for (int number = 1; number <= 5; number++) {
-                CrateTable.CrateTier tier = crate.tier(number);
+                CrateTable.CrateLevel level = crate.level(number);
                 for (int i = 0; i < 200; i++) {
-                    List<CrateTable.RolledItem> items = tier.roll(random);
-                    assertTrue(items.size() >= tier.slotsMin(), crate.id() + " T" + number);
-                    assertTrue(items.size() <= tier.slotsMax(), crate.id() + " T" + number);
+                    List<CrateTable.RolledItem> items = level.roll(random);
+                    assertTrue(items.size() >= level.slotsMin(), crate.id() + " T" + number);
+                    assertTrue(items.size() <= level.slotsMax(), crate.id() + " T" + number);
                     assertTrue(items.size() <= CrateTable.CHEST_SLOTS);
-                    if (!tier.featured().isEmpty()) {
-                        assertTrue(tier.featured().contains(items.get(0).entry()),
+                    if (!level.featured().isEmpty()) {
+                        assertTrue(level.featured().contains(items.get(0).entry()),
                                 "先頭は目玉枠から出るはず");
                     }
                     for (CrateTable.RolledItem item : items) {

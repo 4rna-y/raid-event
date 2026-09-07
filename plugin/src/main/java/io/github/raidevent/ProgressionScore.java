@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * ゲーム進行度スコアとティア決定。
+ * ゲーム進行度スコアとレベル決定。
  *
  * <p>この企画のゴールはエンドラ討伐で、エンドは突入=不可帰還点。だからスコアは
  * 「エンド突入前に稼げるもの」だけで構成する (装備・ネザー系の実績・経過日数)。
@@ -36,7 +36,7 @@ public final class ProgressionScore {
     /** エンダーアイ相当と数えるパールの数。 */
     static final int PEARLS_FOR_EYES = 12;
 
-    public static final List<Integer> DEFAULT_TIER_THRESHOLDS = List.of(10, 19, 28);
+    public static final List<Integer> DEFAULT_LEVEL_THRESHOLDS = List.of(10, 19, 28);
     public static final int DEFAULT_DAYS_PER_POINT = 5;
     public static final int DEFAULT_DAYS_MAX_POINTS = 6;
 
@@ -47,9 +47,9 @@ public final class ProgressionScore {
 
     public ProgressionScore(AdvancementChecker advancements, ConfigurationSection config) {
         this.advancements = advancements;
-        List<Integer> configured = config.getIntegerList("score.tier-thresholds");
-        this.thresholds = configured.size() == TierTable.DAY_MAX_TIER - 1
-                ? List.copyOf(configured) : DEFAULT_TIER_THRESHOLDS;
+        List<Integer> configured = config.getIntegerList("score.level-thresholds");
+        this.thresholds = configured.size() == LevelTable.DAY_MAX_LEVEL - 1
+                ? List.copyOf(configured) : DEFAULT_LEVEL_THRESHOLDS;
         this.daysPerPoint = Math.max(1,
                 config.getInt("score.days-per-point", DEFAULT_DAYS_PER_POINT));
         this.daysMaxPoints = config.getInt("score.days-max-points", DEFAULT_DAYS_MAX_POINTS);
@@ -61,24 +61,24 @@ public final class ProgressionScore {
                 + advancementScore(player) + daysScore(worldFullTime);
     }
 
-    /** 参加者の平均スコアから基礎ティアを出し、夜なら +1 する。 */
-    public int tierFor(Collection<Player> players, World world, boolean night) {
+    /** 参加者の平均スコアから基礎レベルを出し、夜なら +1 する。 */
+    public int levelFor(Collection<Player> players, World world, boolean night) {
         double average = players.stream()
                 .mapToDouble(player -> score(player, world.getFullTime()))
                 .average().orElse(0);
-        return tierOf(average, night);
+        return levelOf(average, night);
     }
 
-    /** スコア → ティア。昼は上限 {@value TierTable#DAY_MAX_TIER}、夜は +1。 */
-    public int tierOf(double averageScore, boolean night) {
+    /** スコア → レベル。昼は上限 {@value LevelTable#DAY_MAX_LEVEL}、夜は +1。 */
+    public int levelOf(double averageScore, boolean night) {
         int base = 1;
         for (int threshold : thresholds) {
             if (averageScore >= threshold) {
                 base++;
             }
         }
-        base = Math.min(base, TierTable.DAY_MAX_TIER);
-        return night ? Math.min(base + 1, TierTable.MAX_TIER) : base;
+        base = Math.min(base, LevelTable.DAY_MAX_LEVEL);
+        return night ? Math.min(base + 1, LevelTable.MAX_LEVEL) : base;
     }
 
     /** 夜かどうか。ベッドで寝られる時間帯を夜と数える。 */

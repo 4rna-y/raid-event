@@ -66,7 +66,7 @@ public final class RaidManager {
     private final Random random;
 
     private Settings settings;
-    private TierTable tiers;
+    private LevelTable levels;
     private CrateTable crates;
     private ProgressionScore score;
 
@@ -86,12 +86,12 @@ public final class RaidManager {
 
     /** 設定とテーブルを読み直す。不備があれば例外 (起動時に気付くべきもの)。 */
     public void load(FileConfiguration config) {
-        // 運用側の config.yml が raid.* だけを書き、tiers / crates は同梱の既定値に
+        // 運用側の config.yml が raid.* だけを書き、levels / crates は同梱の既定値に
         // 任せる使い方を許す。copyDefaults が無いと getKeys() が既定値側のキーを
         // 列挙してくれず、「crates が空」で落ちる
         config.options().copyDefaults(true);
         this.settings = Settings.from(config);
-        this.tiers = TierTable.parse(config);
+        this.levels = LevelTable.parse(config);
         this.crates = CrateTable.parse(config);
         this.score = new ProgressionScore((player, key) -> {
             Advancement advancement = Bukkit.getAdvancement(key);
@@ -177,7 +177,7 @@ public final class RaidManager {
         if (!current.aliveMobs.isEmpty()) {
             return;
         }
-        int totalWaves = tiers.tier(current.tier).waves().size();
+        int totalWaves = levels.level(current.level).waves().size();
         if (current.waveIndex >= totalWaves) {
             finish(world);
         } else if (current.nextWaveAt < 0) {
@@ -193,11 +193,11 @@ public final class RaidManager {
      * レイドを1件生成して地図を配る。
      *
      * @param center      地点の基準にするプレイヤー。null なら対象者から無作為に選ぶ
-     * @param forcedTier  0 なら進行度から決める (管理コマンド用)
+     * @param forcedLevel  0 なら進行度から決める (管理コマンド用)
      * @param forcedCrate null なら無作為 (管理コマンド用)
      * @return 生成できなければ null (対象者が居ない・地形が見つからない)
      */
-    Raid create(World world, Player center, int forcedTier, String forcedCrate) {
+    Raid create(World world, Player center, int forcedLevel, String forcedCrate) {
         List<Player> eligible = eligiblePlayers(world);
         if (eligible.isEmpty()) {
             plugin.getSLF4JLogger().info("レイド生成を見送った: オーバーワールドに対象プレイヤーが居ない");
@@ -212,35 +212,35 @@ public final class RaidManager {
             return null;
         }
         boolean night = ProgressionScore.isNight(world);
-        int tier = forcedTier > 0 ? forcedTier : score.tierFor(eligible, world, night);
+        int level = forcedLevel > 0 ? forcedLevel : score.levelFor(eligible, world, night);
         String crateId = forcedCrate != null ? forcedCrate : randomCrateId();
 
-        current = new Raid(site, tier, crateId, night,
+        current = new Raid(site, level, crateId, night,
                 world.getFullTime() + settings.expireTicks());
         String crateName = crates.crate(crateId).displayName();
         MapService.give(plugin, eligible, current, crateName);
         broadcast("<yellow>レイドが発生した! 配られた地図を確認せよ。"
-                + " <gray>(" + crateName + " / Tier " + tier + ")");
-        plugin.getSLF4JLogger().info("レイド生成: tier={} crate={} night={} 地点=({}, {}, {})",
-                tier, crateId, night,
+                + " <gray>(" + crateName + " / Level " + level + ")");
+        plugin.getSLF4JLogger().info("レイド生成: level={} crate={} night={} 地点=({}, {}, {})",
+                level, crateId, night,
                 site.getBlockX(), site.getBlockY(), site.getBlockZ());
         return current;
     }
 
     private void spawnWave(World world) {
-        TierTable.Tier tier = tiers.tier(current.tier);
-        TierTable.Wave wave = tier.waves().get(current.waveIndex);
+        LevelTable.Level level = levels.level(current.level);
+        LevelTable.Wave wave = level.waves().get(current.waveIndex);
         int participants = (int) world.getNearbyPlayers(
                         current.site, settings.participantRadius()).stream()
                 .filter(MobSpawner::isSurvivalLike).count();
 
         current.aliveMobs.clear();
         int spawned = 0;
-        for (TierTable.MobEntry entry : wave.mobs()) {
+        for (LevelTable.MobEntry entry : wave.mobs()) {
             int count = Scaling.scaled(entry.count(), participants);
             for (int i = 0; i < count; i++) {
                 Location location = RaidSitePicker.spread(current.site, random, 8, 16);
-                Mob mob = MobSpawner.spawn(plugin, location, entry, tier, random);
+                Mob mob = MobSpawner.spawn(plugin, location, entry, level, random);
                 if (mob != null) {
                     current.aliveMobs.add(mob.getUniqueId());
                     spawned++;
@@ -250,10 +250,10 @@ public final class RaidManager {
         current.waveIndex++;
         current.waveTotal = spawned;
         current.nextWaveAt = -1;
-        broadcast("<red>ウェーブ " + current.waveIndex + "/" + tier.waves().size()
+        broadcast("<red>ウェーブ " + current.waveIndex + "/" + level.waves().size()
                 + " <gray>(" + spawned + "体)");
         plugin.getSLF4JLogger().info("ウェーブ {}/{} 開始 ({}体)",
-                current.waveIndex, tier.waves().size(), spawned);
+                current.waveIndex, level.waves().size(), spawned);
     }
 
     /** レイドモブが1体消えた。死亡なら討伐、逃走デスポーンならレイドごとキャンセル。 */
@@ -273,8 +273,8 @@ public final class RaidManager {
     private void finish(World world) {
         Raid raid = current;
         CrateTable.Crate crate = crates.crate(raid.crateId);
-        placeChest(world, raid.site, crate.tier(raid.tier));
-        broadcast("<green>レイド成功! <yellow>" + crate.displayName() + " (Tier " + raid.tier
+        placeChest(world, raid.site, crate.level(raid.level));
+        broadcast("<green>レイド成功! <yellow>" + crate.displayName() + " (Level " + raid.level
                 + ")<green> を <white>(" + raid.site.getBlockX() + ", " + raid.site.getBlockY()
                 + ", " + raid.site.getBlockZ() + ")<green> に設置した。");
         plugin.getSLF4JLogger().info("レイド成功: 報酬チェスト ({}, {}, {})",
@@ -282,14 +282,14 @@ public final class RaidManager {
         clear();
     }
 
-    private void placeChest(World world, Location site, CrateTable.CrateTier crateTier) {
+    private void placeChest(World world, Location site, CrateTable.CrateLevel crateLevel) {
         var block = world.getBlockAt(site);
         block.setType(Material.CHEST);
         if (!(block.getState() instanceof Chest chest)) {
             plugin.getSLF4JLogger().warn("チェストを設置できなかった: {}", site);
             return;
         }
-        List<CrateTable.RolledItem> items = crateTier.roll(random);
+        List<CrateTable.RolledItem> items = crateLevel.roll(random);
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < CrateTable.CHEST_SLOTS; i++) {
             slots.add(i);
@@ -367,24 +367,24 @@ public final class RaidManager {
 
     // ------------------------------------------------------------------ 管理コマンド用
 
-    /** 任意のティア・クレートで今すぐ生成する。進行中があれば作らない。 */
-    public Raid forceSpawn(int tier, String crateId, Player center) {
+    /** 任意のレベル・クレートで今すぐ生成する。進行中があれば作らない。 */
+    public Raid forceSpawn(int level, String crateId, Player center) {
         if (current != null) {
             return null;
         }
         crates.crate(crateId);   // 知らない id なら例外
-        if (tier < 1 || tier > TierTable.MAX_TIER) {
-            throw new IllegalArgumentException("ティアは 1〜" + TierTable.MAX_TIER);
+        if (level < 1 || level > LevelTable.MAX_LEVEL) {
+            throw new IllegalArgumentException("レベルは 1〜" + LevelTable.MAX_LEVEL);
         }
-        return create(overworld(), center, tier, crateId);
+        return create(overworld(), center, level, crateId);
     }
 
     public Optional<Raid> current() {
         return Optional.ofNullable(current);
     }
 
-    public TierTable tiers() {
-        return tiers;
+    public LevelTable levels() {
+        return levels;
     }
 
     public CrateTable crates() {
@@ -417,7 +417,7 @@ public final class RaidManager {
             hideBossBar();
             return;
         }
-        int totalWaves = tiers.tier(current.tier).waves().size();
+        int totalWaves = levels.level(current.level).waves().size();
         if (bossBar == null) {
             bossBar = BossBar.bossBar(Component.empty(), 1f,
                     BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);

@@ -12,67 +12,67 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /** 同梱 config.yml のモブ表が設計どおりで、危険な構成を拒否できることを見る。 */
-class TierTableTest {
+class LevelTableTest {
 
-    private final TierTable table = TierTable.parse(DefaultConfigTest.loadBundledConfig());
+    private final LevelTable table = LevelTable.parse(DefaultConfigTest.loadBundledConfig());
 
     @Test
-    @DisplayName("5ティアすべて定義されている")
-    void hasFiveTiers() {
-        assertEquals(5, table.tiers().size());
+    @DisplayName("5レベルすべて定義されている")
+    void hasFiveLevels() {
+        assertEquals(5, table.levels().size());
     }
 
     @Test
     @DisplayName("ウェーブ数は 2/3/3/4/5")
     void waveCounts() {
         assertEquals(List.of(2, 3, 3, 4, 5), List.of(
-                table.tier(1).waves().size(),
-                table.tier(2).waves().size(),
-                table.tier(3).waves().size(),
-                table.tier(4).waves().size(),
-                table.tier(5).waves().size()));
+                table.level(1).waves().size(),
+                table.level(2).waves().size(),
+                table.level(3).waves().size(),
+                table.level(4).waves().size(),
+                table.level(5).waves().size()));
     }
 
     @Test
     @DisplayName("総数は 8/14/18/25/32 (参加者2人基準)")
     void totalMobs() {
         assertEquals(List.of(8, 14, 18, 25, 32), List.of(
-                table.tier(1).totalMobs(),
-                table.tier(2).totalMobs(),
-                table.tier(3).totalMobs(),
-                table.tier(4).totalMobs(),
-                table.tier(5).totalMobs()));
+                table.level(1).totalMobs(),
+                table.level(2).totalMobs(),
+                table.level(3).totalMobs(),
+                table.level(4).totalMobs(),
+                table.level(5).totalMobs()));
     }
 
     @Test
-    @DisplayName("エヴォーカーは T5 の最終ウェーブに1体だけ")
+    @DisplayName("エヴォーカーは L5 の最終ウェーブに1体だけ")
     void evokerOnlyInFinalWave() {
-        for (int tier = 1; tier <= 4; tier++) {
-            for (TierTable.Wave wave : table.tier(tier).waves()) {
+        for (int level = 1; level <= 4; level++) {
+            for (LevelTable.Wave wave : table.level(level).waves()) {
                 assertTrue(wave.mobs().stream().noneMatch(m -> m.type() == EntityType.EVOKER),
-                        "T" + tier + " にエヴォーカーが居る。脅威は T5 のボス戦だけに集約する");
+                        "T" + level + " にエヴォーカーが居る。脅威は L5 のボス戦だけに集約する");
             }
         }
-        List<TierTable.Wave> waves = table.tier(5).waves();
+        List<LevelTable.Wave> waves = table.level(5).waves();
         for (int i = 0; i < waves.size() - 1; i++) {
             assertTrue(waves.get(i).mobs().stream().noneMatch(m -> m.type() == EntityType.EVOKER));
         }
         int evokers = waves.get(waves.size() - 1).mobs().stream()
                 .filter(m -> m.type() == EntityType.EVOKER)
-                .mapToInt(TierTable.MobEntry::count).sum();
+                .mapToInt(LevelTable.MobEntry::count).sum();
         assertEquals(1, evokers);
     }
 
     @Test
-    @DisplayName("強化倍率はティアで単調に上がる")
+    @DisplayName("強化倍率はレベルで単調に上がる")
     void attributesAreMonotonic() {
-        for (int tier = 2; tier <= 5; tier++) {
-            assertTrue(table.tier(tier).health() >= table.tier(tier - 1).health());
-            assertTrue(table.tier(tier).damage() >= table.tier(tier - 1).damage());
-            assertTrue(table.tier(tier).speed() >= table.tier(tier - 1).speed());
+        for (int level = 2; level <= 5; level++) {
+            assertTrue(table.level(level).health() >= table.level(level - 1).health());
+            assertTrue(table.level(level).damage() >= table.level(level - 1).damage());
+            assertTrue(table.level(level).speed() >= table.level(level - 1).speed());
         }
-        assertEquals(1.75, table.tier(5).health());
-        assertEquals(1.25, table.tier(5).damage());
+        assertEquals(1.75, table.level(5).health());
+        assertEquals(1.25, table.level(5).damage());
     }
 
     @Test
@@ -80,7 +80,7 @@ class TierTableTest {
     void rejectsCreeper() {
         YamlConfiguration config = configWithMob("creeper");
         IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class, () -> TierTable.parse(config));
+                assertThrows(IllegalArgumentException.class, () -> LevelTable.parse(config));
         assertTrue(e.getMessage().contains("CREEPER"), e.getMessage());
     }
 
@@ -90,7 +90,7 @@ class TierTableTest {
         YamlConfiguration config = new YamlConfiguration();
         try {
             config.loadFromString("""
-                    tiers:
+                    levels:
                       "1":
                         waves:
                           - mobs:
@@ -100,9 +100,9 @@ class TierTableTest {
         } catch (Exception e) {
             throw new AssertionError(e);
         }
-        // 1ティアしか無いことより先に、まずウェーブの中身で落ちてほしい
+        // 1レベルしか無いことより先に、まずウェーブの中身で落ちてほしい
         IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class, () -> TierTable.parse(config));
+                assertThrows(IllegalArgumentException.class, () -> LevelTable.parse(config));
         assertTrue(e.getMessage().contains("遠距離"), e.getMessage());
     }
 
@@ -110,7 +110,7 @@ class TierTableTest {
         YamlConfiguration config = new YamlConfiguration();
         try {
             config.loadFromString("""
-                    tiers:
+                    levels:
                       "1":
                         waves:
                           - mobs:

@@ -71,8 +71,8 @@ class DefaultConfigTest {
     @Test
     @DisplayName("スコアの既定値もコード側と一致する")
     void scoreDefaultsMatchCode() {
-        assertEquals(ProgressionScore.DEFAULT_TIER_THRESHOLDS,
-                List.copyOf(config.getIntegerList("score.tier-thresholds")));
+        assertEquals(ProgressionScore.DEFAULT_LEVEL_THRESHOLDS,
+                List.copyOf(config.getIntegerList("score.level-thresholds")));
         assertEquals(ProgressionScore.DEFAULT_DAYS_PER_POINT,
                 config.getInt("score.days-per-point"));
         assertEquals(ProgressionScore.DEFAULT_DAYS_MAX_POINTS,

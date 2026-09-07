@@ -70,7 +70,7 @@ public final class RaidCommand implements BasicCommand {
                 }
             }
             default -> sender.sendMessage(plugin.message(sender.hasPermission("raidevent.admin")
-                    ? "<red>使い方: /re [status|spawn <tier> <crate> [player]|cancel|reload]"
+                    ? "<red>使い方: /re [status|spawn <level> <crate> [player]|cancel|reload]"
                     : "<red>使い方: /re (進行中のレイドを表示)"));
         }
     }
@@ -87,31 +87,31 @@ public final class RaidCommand implements BasicCommand {
         String state = raid.state == Raid.State.PENDING
                 ? "接近待ち" : "ウェーブ " + raid.waveIndex + " 進行中 (残り " + raid.aliveMobs.size() + "体)";
         sender.sendMessage(plugin.message("<yellow>レイド " + state
-                + " <gray>Tier " + raid.tier + " / 地点 (" + raid.site.getBlockX()
+                + " <gray>Level " + raid.level + " / 地点 (" + raid.site.getBlockX()
                 + ", " + raid.site.getBlockY() + ", " + raid.site.getBlockZ() + ")"));
     }
 
     private void showStatus(CommandSender sender) {
         sender.sendMessage(plugin.message("<white>v" + plugin.getPluginMeta().getVersion()
                 + " / enabled: " + plugin.getConfig().getBoolean("enabled", true)
-                + " / ティア: " + plugin.manager().tiers().tiers().size()
+                + " / レベル: " + plugin.manager().levels().levels().size()
                 + " / クレート: " + plugin.manager().crates().crates().size()));
         showCurrent(sender);
     }
 
     // ------------------------------------------------------------------ 生成
 
-    /** {@code /re spawn <tier> <crate> [player]}。コンソールからは player 必須。 */
+    /** {@code /re spawn <level> <crate> [player]}。コンソールからは player 必須。 */
     private void spawn(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(plugin.message("<red>使い方: /re spawn <tier> <crate> [player]"));
+            sender.sendMessage(plugin.message("<red>使い方: /re spawn <level> <crate> [player]"));
             return;
         }
-        int tier;
+        int level;
         try {
-            tier = Integer.parseInt(args[1]);
+            level = Integer.parseInt(args[1]);
         } catch (NumberFormatException e) {
-            sender.sendMessage(plugin.message("<red>ティアは数字で: " + args[1]));
+            sender.sendMessage(plugin.message("<red>レベルは数字で: " + args[1]));
             return;
         }
         Player center = null;
@@ -128,7 +128,7 @@ public final class RaidCommand implements BasicCommand {
             return;
         }
         try {
-            Raid raid = plugin.manager().forceSpawn(tier, args[2].toLowerCase(Locale.ROOT), center);
+            Raid raid = plugin.manager().forceSpawn(level, args[2].toLowerCase(Locale.ROOT), center);
             if (raid == null) {
                 sender.sendMessage(plugin.message(
                         "<red>生成できなかった (進行中のレイドがあるか、地点が見つからない)。"));

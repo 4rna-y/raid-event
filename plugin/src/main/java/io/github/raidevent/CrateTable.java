@@ -21,19 +21,19 @@ public record CrateTable(Map<String, Crate> crates) {
     /** チェストのスロット数。充填率はこの中でのスロット数で表す。 */
     public static final int CHEST_SLOTS = 27;
 
-    public record Crate(String id, String displayName, Map<Integer, CrateTier> tiers) {
+    public record Crate(String id, String displayName, Map<Integer, CrateLevel> levels) {
 
-        public CrateTier tier(int number) {
-            CrateTier tier = tiers.get(number);
-            if (tier == null) {
-                throw new IllegalArgumentException("クレート " + id + " にティア " + number + " が無い");
+        public CrateLevel level(int number) {
+            CrateLevel level = levels.get(number);
+            if (level == null) {
+                throw new IllegalArgumentException("クレート " + id + " にレベル " + number + " が無い");
             }
-            return tier;
+            return level;
         }
     }
 
-    /** クレート1種の1ティアぶん。 */
-    public record CrateTier(int slotsMin, int slotsMax, List<LootEntry> pool,
+    /** クレート1種の1レベルぶん。 */
+    public record CrateLevel(int slotsMin, int slotsMax, List<LootEntry> pool,
             List<LootEntry> featured) {
 
         /**
@@ -110,37 +110,37 @@ public record CrateTable(Map<String, Crate> crates) {
 
     private static Crate parseCrate(String id, ConfigurationSection section) {
         String displayName = section.getString("display-name", id);
-        ConfigurationSection tiersSection = section.getConfigurationSection("tiers");
-        if (tiersSection == null) {
-            throw new IllegalArgumentException("crates." + id + " に tiers が無い");
+        ConfigurationSection levelsSection = section.getConfigurationSection("levels");
+        if (levelsSection == null) {
+            throw new IllegalArgumentException("crates." + id + " に levels が無い");
         }
-        Map<Integer, CrateTier> tiers = new LinkedHashMap<>();
-        for (int number = 1; number <= TierTable.MAX_TIER; number++) {
-            ConfigurationSection tierSection =
-                    tiersSection.getConfigurationSection(String.valueOf(number));
-            if (tierSection == null) {
-                throw new IllegalArgumentException("crates." + id + ".tiers." + number + " が無い");
+        Map<Integer, CrateLevel> levels = new LinkedHashMap<>();
+        for (int number = 1; number <= LevelTable.MAX_LEVEL; number++) {
+            ConfigurationSection levelSection =
+                    levelsSection.getConfigurationSection(String.valueOf(number));
+            if (levelSection == null) {
+                throw new IllegalArgumentException("crates." + id + ".levels." + number + " が無い");
             }
-            tiers.put(number, parseTier(id, number, tierSection));
+            levels.put(number, parseLevel(id, number, levelSection));
         }
-        return new Crate(id, displayName, Map.copyOf(tiers));
+        return new Crate(id, displayName, Map.copyOf(levels));
     }
 
-    private static CrateTier parseTier(String id, int number, ConfigurationSection section) {
+    private static CrateLevel parseLevel(String id, int number, ConfigurationSection section) {
         ConfigurationSection slots = section.getConfigurationSection("slots");
         int min = slots == null ? 1 : slots.getInt("min", 1);
         int max = slots == null ? min : slots.getInt("max", min);
         if (min < 1 || max < min || max > CHEST_SLOTS) {
-            throw new IllegalArgumentException("crates." + id + ".tiers." + number
+            throw new IllegalArgumentException("crates." + id + ".levels." + number
                     + " の slots が変 (1 <= min <= max <= " + CHEST_SLOTS + "): "
                     + min + ".." + max);
         }
         List<LootEntry> pool = parseEntries(id, number, section.getMapList("pool"));
         if (pool.isEmpty()) {
-            throw new IllegalArgumentException("crates." + id + ".tiers." + number + " の pool が空");
+            throw new IllegalArgumentException("crates." + id + ".levels." + number + " の pool が空");
         }
         List<LootEntry> featured = parseEntries(id, number, section.getMapList("featured"));
-        return new CrateTier(min, max, pool, featured);
+        return new CrateLevel(min, max, pool, featured);
     }
 
     private static List<LootEntry> parseEntries(String id, int number, List<Map<?, ?>> maps) {
@@ -150,23 +150,23 @@ public record CrateTable(Map<String, Crate> crates) {
             Material material = Material.matchMaterial(itemName);
             if (material == null) {
                 throw new IllegalArgumentException(
-                        "crates." + id + ".tiers." + number + " に知らないアイテム: " + itemName);
+                        "crates." + id + ".levels." + number + " に知らないアイテム: " + itemName);
             }
-            int min = TierTable.intOf(map.get("min"), 1);
-            int max = TierTable.intOf(map.get("max"), min);
-            int weight = TierTable.intOf(map.get("weight"), 0);
+            int min = LevelTable.intOf(map.get("min"), 1);
+            int max = LevelTable.intOf(map.get("max"), min);
+            int weight = LevelTable.intOf(map.get("weight"), 0);
             if (weight < 1) {
-                throw new IllegalArgumentException("crates." + id + ".tiers." + number
+                throw new IllegalArgumentException("crates." + id + ".levels." + number
                         + " の " + itemName + " の weight が 1 未満");
             }
             if (min < 1 || max < min) {
-                throw new IllegalArgumentException("crates." + id + ".tiers." + number
+                throw new IllegalArgumentException("crates." + id + ".levels." + number
                         + " の " + itemName + " の個数が変: " + min + ".." + max);
             }
             Map<String, Integer> enchants = new LinkedHashMap<>();
             if (map.get("enchants") instanceof Map<?, ?> enchantMap) {
                 enchantMap.forEach((name, level) ->
-                        enchants.put(String.valueOf(name), TierTable.intOf(level, 1)));
+                        enchants.put(String.valueOf(name), LevelTable.intOf(level, 1)));
             }
             String potion = map.get("potion") == null ? null : String.valueOf(map.get("potion"));
             entries.add(new LootEntry(material, min, max, weight, Map.copyOf(enchants), potion));

@@ -81,10 +81,10 @@ class RaidE2eTest {
 
     @Test
     @Order(1)
-    @DisplayName("本番の jar が 26.1 のサーバーでも読み込まれ、テーブルが5ティア3クレートで揃う")
+    @DisplayName("本番の jar が 26.1 のサーバーでも読み込まれ、テーブルが5レベル3クレートで揃う")
     void pluginLoads() throws Exception {
         console.send("raidevent status");
-        console.await("ティア: 5", Duration.ofSeconds(30));
+        console.await("レベル: 5", Duration.ofSeconds(30));
         assertTrue(console.sawLine("クレート: 3"), "クレートが3種登録されていない" + console.tail());
     }
 
@@ -98,7 +98,7 @@ class RaidE2eTest {
                         return;
                     }
                     try {
-                        // モブに殴られても死なないようにしてから、T5 マジカルを生成する
+                        // モブに殴られても死なないようにしてから、L5 マジカルを生成する
                         console.send("effect give E2eRaider minecraft:resistance 99999 255 true");
                         console.send("raidevent spawn 5 magical E2eRaider");
                         console.await("レイド生成:", Duration.ofSeconds(30));
@@ -134,7 +134,7 @@ class RaidE2eTest {
                 "全ウェーブを倒したのに成功の告知が来ない" + result.describe() + console.tail());
 
         assertTrue(console.sawLine("ウェーブ 5/5"),
-                "T5 なのに最終ウェーブまで進んでいない" + console.tail());
+                "L5 なのに最終ウェーブまで進んでいない" + console.tail());
 
         // 報酬チェストが実際に置かれているかをサーバー側で確かめる
         int[] chest = coords(CHEST);

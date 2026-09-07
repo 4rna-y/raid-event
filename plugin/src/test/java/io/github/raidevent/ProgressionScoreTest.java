@@ -18,39 +18,39 @@ import org.bukkit.inventory.PlayerInventory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** 進行度スコアとティア決定。 */
+/** 進行度スコアとレベル決定。 */
 class ProgressionScoreTest {
 
     /** 実績を持っていない前提のスコア計算機 (既定値設定)。 */
     private final ProgressionScore none =
             new ProgressionScore((player, key) -> false, new YamlConfiguration());
 
-    // ------------------------------------------------------------------ ティア境界
+    // ------------------------------------------------------------------ レベル境界
 
     @Test
-    @DisplayName("スコア → 基礎ティアの境界 (10 / 19 / 28)")
-    void tierBands() {
-        assertEquals(1, none.tierOf(0, false));
-        assertEquals(1, none.tierOf(9.9, false));
-        assertEquals(2, none.tierOf(10, false));
-        assertEquals(3, none.tierOf(19, false));
-        assertEquals(4, none.tierOf(28, false));
+    @DisplayName("スコア → 基礎レベルの境界 (10 / 19 / 28)")
+    void levelBands() {
+        assertEquals(1, none.levelOf(0, false));
+        assertEquals(1, none.levelOf(9.9, false));
+        assertEquals(2, none.levelOf(10, false));
+        assertEquals(3, none.levelOf(19, false));
+        assertEquals(4, none.levelOf(28, false));
     }
 
     @Test
-    @DisplayName("昼は上限 T4。T5 は夜 (+1) でしか出ない")
+    @DisplayName("昼は上限 L4。L5 は夜 (+1) でしか出ない")
     void dayCapAndNightBump() {
-        assertEquals(4, none.tierOf(1000, false), "昼はどれだけ進行しても T4 まで");
-        assertEquals(5, none.tierOf(28, true), "夜は同じ進行度で必ず1段上がる");
-        assertEquals(5, none.tierOf(1000, true));
-        assertEquals(2, none.tierOf(0, true), "序盤でも夜なら T2");
+        assertEquals(4, none.levelOf(1000, false), "昼はどれだけ進行しても L4 まで");
+        assertEquals(5, none.levelOf(28, true), "夜は同じ進行度で必ず1段上がる");
+        assertEquals(5, none.levelOf(1000, true));
+        assertEquals(2, none.levelOf(0, true), "序盤でも夜なら L2");
     }
 
     @Test
-    @DisplayName("夜は同じスコアで必ず昼よりティアが高い")
+    @DisplayName("夜は同じスコアで必ず昼よりレベルが高い")
     void nightAlwaysBeatsDay() {
         for (double score = 0; score <= 60; score += 0.5) {
-            assertTrue(none.tierOf(score, true) > none.tierOf(score, false),
+            assertTrue(none.levelOf(score, true) > none.levelOf(score, false),
                     "score=" + score);
         }
     }
@@ -58,15 +58,15 @@ class ProgressionScoreTest {
     // ------------------------------------------------------------------ スコアの内訳
 
     @Test
-    @DisplayName("素手・裸・実績なしはスコア0 = T1")
-    void emptyPlayerIsTierOne() {
+    @DisplayName("素手・裸・実績なしはスコア0 = L1")
+    void emptyPlayerIsLevelOne() {
         Player player = playerWith(new Material[4], new Material[0]);
         assertEquals(0, none.score(player, 0));
     }
 
     @Test
-    @DisplayName("ダイヤ一式+ダイヤ剣+ネザー系実績で昼 T4 に届く")
-    void endgamePlayerReachesTierFour() {
+    @DisplayName("ダイヤ一式+ダイヤ剣+ネザー系実績で昼 L4 に届く")
+    void endgamePlayerReachesLevelFour() {
         ProgressionScore score = new ProgressionScore(
                 (player, key) -> Set.of(ProgressionScore.ENTER_NETHER,
                         ProgressionScore.OBTAIN_BLAZE_ROD).contains(key),
@@ -78,12 +78,12 @@ class ProgressionScoreTest {
         // 防具 16 + 剣 4 + 実績 8 = 28
         double value = score.score(player, 0);
         assertEquals(28.0, value, 0.001);
-        assertEquals(4, score.tierOf(value, false));
-        assertEquals(5, score.tierOf(value, true));
+        assertEquals(4, score.levelOf(value, false));
+        assertEquals(5, score.levelOf(value, true));
     }
 
     @Test
-    @DisplayName("鉄装備の中盤プレイヤーは昼 T2〜T3 の帯に入る")
+    @DisplayName("鉄装備の中盤プレイヤーは昼 L2〜L3 の帯に入る")
     void midgamePlayerLandsInMiddle() {
         Player player = playerWith(
                 new Material[] {Material.IRON_BOOTS, Material.IRON_LEGGINGS,
@@ -92,7 +92,7 @@ class ProgressionScoreTest {
         // 防具 12 + 剣 3 = 15
         double value = none.score(player, 0);
         assertEquals(15.0, value, 0.001);
-        assertEquals(2, none.tierOf(value, false));
+        assertEquals(2, none.levelOf(value, false));
     }
 
     @Test

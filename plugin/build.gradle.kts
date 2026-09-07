@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "io.github.raidevent"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -34,6 +34,9 @@ tasks.test {
 }
 
 tasks.processResources {
+    // version は expand の中でしか使っていないので Gradle には見えない。宣言しないと
+    // 上げても paper-plugin.yml が古いままキャッシュから出てくる
+    inputs.property("version", project.version)
     filesMatching("paper-plugin.yml") {
         expand("version" to project.version)
     }

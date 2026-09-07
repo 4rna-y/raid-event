@@ -24,7 +24,7 @@ final class Raid {
     /** この1件を指す id。配った地図に焼き込んでおき、回収時の目印にする。 */
     final UUID id = UUID.randomUUID();
     final Location site;
-    final int tier;
+    final int level;
     final String crateId;
     final boolean night;
     /** ワールドの fullTime 基準の失効時刻。発火したら失効しない。 */
@@ -42,9 +42,9 @@ final class Raid {
     /** 参加者が誰も居なくなった時刻 (fullTime)。負なら居る。放棄検出用。 */
     long absentSince = -1;
 
-    Raid(Location site, int tier, String crateId, boolean night, long expiresAt) {
+    Raid(Location site, int level, String crateId, boolean night, long expiresAt) {
         this.site = site;
-        this.tier = tier;
+        this.level = level;
         this.crateId = crateId;
         this.night = night;
         this.expiresAt = expiresAt;

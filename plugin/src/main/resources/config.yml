@@ -37,23 +37,23 @@ raid:
   abandon-ticks: 2400
 
 # ゲーム進行度スコア。オンラインのサバイバルプレイヤー (オーバーワールド在圏) の
-# 平均スコアから基礎ティアを決める。昼レイドは基礎ティアそのまま (上限4)、
-# 夜レイドは +1 (最大5)。つまり Tier 5 は夜にしか発生しない。
+# 平均スコアから基礎レベルを決める。昼レイドは基礎レベルそのまま (上限4)、
+# 夜レイドは +1 (最大5)。つまり Level 5 は夜にしか発生しない。
 score:
-  # このスコア以上で基礎ティアが T2 / T3 / T4 になる。
-  tier-thresholds: [10, 19, 28]
+  # このスコア以上で基礎レベルが L2 / L3 / L4 になる。
+  level-thresholds: [10, 19, 28]
   # ワールド経過日数によるスコア: この日数ごとに +1。
   days-per-point: 5
   # 日数で足せる上限。
   days-max-points: 6
 
-# ティアごとのウェーブ構成と強化倍率。
+# レベルごとのウェーブ構成と強化倍率。
 # モブの数は「参加者2人」基準。ウェーブ開始時に participant-radius 内の人数 n で
 # ×(1 + 0.4×(n-2)) にスケールする (1人なら ×0.6、端数切り上げ)。
 # クリーパー (爆発+地形破壊) とラヴェジャー (ノックバック事故) は、死=ワールド消滅の
 # サーバーでは一撃事故の元なので使わない (パース時に拒否される)。
 # 弓・クロスボウ持ち (スケルトン+ピリジャー) は各ウェーブ4体まで (これもパース時に検査)。
-tiers:
+levels:
   "1":
     attributes: {health: 1.0, damage: 1.0, speed: 1.0}
     waves:
@@ -137,12 +137,12 @@ tiers:
 
 # 報酬クレート。チェスト1個 (27スロット)。slots の範囲でスロット数を決め、
 # 各スロットを pool から重み付きで独立に抽選する (重複あり)。
-# featured があるティアでは、まず featured から1スロット確定で選ぶ (T4/T5 の目玉枠)。
+# featured があるレベルでは、まず featured から1スロット確定で選ぶ (L4/L5 の目玉枠)。
 # ポーションは potion にバニラの PotionType 名を書く (strong_* / long_* も可)。
 crates:
   miner:
     display-name: "マイナークレート"
-    tiers:
+    levels:
       "1":
         slots: {min: 5, max: 8}
         pool:
@@ -203,7 +203,7 @@ crates:
           - {item: diamond_pickaxe, weight: 1, enchants: {efficiency: 5, unbreaking: 3, silk_touch: 1}}
   magical:
     display-name: "マジカルクレート"
-    tiers:
+    levels:
       "1":
         slots: {min: 5, max: 8}
         pool:
@@ -290,7 +290,7 @@ crates:
           - {item: enchanted_book, weight: 1, enchants: {infinity: 1}}
   soldier:
     display-name: "ソルジャークレート"
-    tiers:
+    levels:
       "1":
         slots: {min: 5, max: 8}
         pool:

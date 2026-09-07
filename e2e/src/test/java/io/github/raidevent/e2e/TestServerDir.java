@@ -65,7 +65,7 @@ final class TestServerDir {
                 sync-chunk-writes=false
                 """.formatted(SERVER_PORT));
 
-        // テスト用に距離と間隔を縮める。tiers / crates は同梱の既定値をそのまま使う
+        // テスト用に距離と間隔を縮める。levels / crates は同梱の既定値をそのまま使う
         // (書かなければ JavaPlugin が埋め込みの config.yml を既定値として引く)。
         // daily-chance: 0 で自然発生を止め、テストは管理コマンドで駆動する。
         Files.writeString(root.resolve("plugins/RaidEvent/config.yml"), """

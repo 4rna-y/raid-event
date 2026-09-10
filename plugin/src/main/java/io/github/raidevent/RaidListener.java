@@ -27,6 +27,10 @@ final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     void onDeath(EntityDeathEvent event) {
         manager.onMobGone(event.getEntity().getUniqueId(), false);
+        // ウィザー・ウォーデンの討伐は誰が倒したかを問わずワールドの節目にする
+        if (manager.milestones().record(event.getEntityType())) {
+            manager.onMilestone(event.getEntityType());
+        }
     }
 
     /**

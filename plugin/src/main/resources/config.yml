@@ -37,11 +37,13 @@ raid:
   abandon-ticks: 2400
 
 # ゲーム進行度スコア。オンラインのサバイバルプレイヤー (オーバーワールド在圏) の
-# 平均スコアから基礎レベルを決める。昼レイドは基礎レベルそのまま (上限4)、
-# 夜レイドは +1 (最大5)。つまり Level 5 は夜にしか発生しない。
+# 平均スコアから基礎レベルを決める。昼レイドは基礎レベルそのまま (上限 7)、
+# 夜レイドは +1 (最大 8)。つまり Level 8 は夜にしか発生しない。
+# 加えてワールドの節目が上限になる: エンドラ未討伐 → L5 まで、討伐 → L6、
+# + ウィザーかウォーデン → L7、+ 両方 → L8。節目は 1 つ +6 点、エリトラ +3、ビーコン (ネザースター) +3。
 score:
-  # このスコア以上で基礎レベルが L2 / L3 / L4 になる。
-  level-thresholds: [10, 19, 28]
+  # このスコア以上で基礎レベルが L2 / L3 / … / L8 になる。
+  level-thresholds: [10, 19, 28, 36, 42, 50, 58]
   # ワールド経過日数によるスコア: この日数ごとに +1。
   days-per-point: 5
   # 日数で足せる上限。
@@ -135,9 +137,101 @@ levels:
           - {type: pillager, count: 2, weapon: crossbow}
           - {type: skeleton, count: 2, weapon: bow, weapon-enchants: {power: 1}}
 
+  # ---- エンド突入後 (節目で解禁)。新顔: ウィザースケルトン・ブレイズ・エンダーマン・ボグド・ストレイ (L6〜)、
+  # ピグリンブルート・イリュージョナー (L7〜)。攻撃は +40% で止める (ネザライト + 防護 IV で 3 ハート弱)。
+  "6":
+    attributes: {health: 2.0, damage: 1.3, speed: 1.25}
+    waves:
+      - mobs:
+          - {type: zombie, count: 4, helmet: iron_helmet, weapon: iron_sword}
+          - {type: skeleton, count: 2, weapon: bow, weapon-enchants: {power: 2}}
+          - {type: wither_skeleton, count: 2, weapon: stone_sword}
+      - mobs:
+          - {type: pillager, count: 2, weapon: crossbow}
+          - {type: bogged, count: 2, weapon: bow}
+          - {type: zombie, count: 3}
+          - {type: enderman, count: 1}
+      - mobs:
+          - {type: vindicator, count: 2, weapon: iron_axe}
+          - {type: witch, count: 1}
+          - {type: blaze, count: 2}
+          - {type: zombie, count: 2, helmet: diamond_helmet}
+      - mobs:
+          - {type: wither_skeleton, count: 3, weapon: iron_sword}
+          - {type: skeleton, count: 2, weapon: bow, weapon-enchants: {power: 2}}
+          - {type: zombie, count: 1, baby: true}
+          - {type: spider, count: 2}
+      - mobs:
+          - {type: evoker, count: 1}
+          - {type: vindicator, count: 2, weapon: iron_axe}
+          - {type: pillager, count: 2, weapon: crossbow}
+          - {type: wither_skeleton, count: 2, weapon: iron_sword}
+  "7":
+    attributes: {health: 2.25, damage: 1.4, speed: 1.3}
+    waves:
+      - mobs:
+          - {type: zombie, count: 4, helmet: iron_helmet, weapon: iron_sword}
+          - {type: wither_skeleton, count: 2, weapon: iron_sword}
+          - {type: stray, count: 2, weapon: bow}
+      - mobs:
+          - {type: pillager, count: 3, weapon: crossbow}
+          - {type: zombie, count: 3, helmet: diamond_helmet}
+          - {type: enderman, count: 2}
+      - mobs:
+          - {type: vindicator, count: 2, weapon: iron_axe}
+          - {type: blaze, count: 3}
+          - {type: witch, count: 1}
+          - {type: zombie, count: 2}
+      - mobs:
+          - {type: piglin_brute, count: 1, weapon: golden_axe}
+          - {type: wither_skeleton, count: 3, weapon: iron_sword}
+          - {type: skeleton, count: 2, weapon: bow, weapon-enchants: {power: 3}}
+      - mobs:
+          - {type: illusioner, count: 1}
+          - {type: vindicator, count: 2, weapon: iron_axe}
+          - {type: bogged, count: 2, weapon: bow}
+          - {type: zombie, count: 3, chestplate: diamond_chestplate}
+      - mobs:
+          - {type: evoker, count: 2}
+          - {type: vindicator, count: 2, weapon: iron_axe}
+          - {type: pillager, count: 2, weapon: crossbow}
+          - {type: wither_skeleton, count: 2, weapon: iron_sword}
+  "8":
+    attributes: {health: 2.5, damage: 1.4, speed: 1.3}
+    waves:
+      - mobs:
+          - {type: zombie, count: 5, helmet: diamond_helmet, weapon: iron_sword}
+          - {type: wither_skeleton, count: 3, weapon: iron_sword}
+          - {type: stray, count: 2, weapon: bow, weapon-enchants: {power: 2}}
+      - mobs:
+          - {type: pillager, count: 4, weapon: crossbow}
+          - {type: zombie, count: 3}
+          - {type: enderman, count: 2}
+      - mobs:
+          - {type: vindicator, count: 3, weapon: iron_axe}
+          - {type: blaze, count: 3}
+          - {type: witch, count: 2}
+          - {type: zombie, count: 1, baby: true}
+      - mobs:
+          - {type: piglin_brute, count: 2, weapon: golden_axe}
+          - {type: wither_skeleton, count: 4, weapon: iron_sword}
+          - {type: skeleton, count: 3, weapon: bow, weapon-enchants: {power: 3}}
+      - mobs:
+          - {type: illusioner, count: 1}
+          - {type: bogged, count: 3, weapon: bow}
+          - {type: vindicator, count: 2, weapon: diamond_axe}
+          - {type: zombie, count: 3, chestplate: diamond_chestplate}
+      - mobs:
+          - {type: evoker, count: 2}
+          - {type: vindicator, count: 3, weapon: diamond_axe}
+          - {type: pillager, count: 1, weapon: crossbow}
+          - {type: wither_skeleton, count: 2, weapon: iron_sword}
+
 # 報酬クレート。チェスト1個 (27スロット)。slots の範囲でスロット数を決め、
 # 各スロットを pool から重み付きで独立に抽選する (重複あり)。
-# featured があるレベルでは、まず featured から1スロット確定で選ぶ (L4/L5 の目玉枠)。
+# featured があるレベルでは、まず featured から1スロット確定で選ぶ (L4 以上の目玉枠)。
+# custom: 特別なアイテム (dimensional_chest / sniper_rifle / modifier_revival)。振る舞いは relics / Modifier が持つ。
+# エリトラ・ネザースター・メイスは出さない (エンドシティ・ウィザー・トライアルチャンバーのもの)。
 # ポーションは potion にバニラの PotionType 名を書く (strong_* / long_* も可)。
 crates:
   miner:
@@ -201,6 +295,50 @@ crates:
           - {item: diamond_pickaxe, weight: 2, enchants: {efficiency: 5, unbreaking: 3, fortune: 3}}
           - {item: diamond_pickaxe, weight: 2, enchants: {efficiency: 4, unbreaking: 3, silk_touch: 1}}
           - {item: diamond_pickaxe, weight: 1, enchants: {efficiency: 5, unbreaking: 3, silk_touch: 1}}
+      "6":
+        slots: {min: 16, max: 21}
+        pool:
+          - {item: diamond, min: 12, max: 20, weight: 16}
+          - {item: emerald, min: 8, max: 12, weight: 12}
+          - {item: diamond_block, min: 1, max: 2, weight: 6}
+          - {item: iron_block, min: 3, max: 5, weight: 8}
+          - {item: gold_block, min: 2, max: 3, weight: 6}
+          - {item: lapis_block, min: 2, max: 4, weight: 5}
+          - {item: amethyst_shard, min: 8, max: 16, weight: 6}
+          - {item: diamond_shovel, weight: 4, enchants: {efficiency: 5, unbreaking: 3}}
+          - {item: diamond_axe, weight: 4, enchants: {efficiency: 5, unbreaking: 3}}
+        featured:
+          - {item: netherite_scrap, min: 1, max: 1, weight: 3}
+          - {item: diamond_pickaxe, weight: 2, enchants: {efficiency: 5, unbreaking: 3, fortune: 3}}
+          - {item: diamond_pickaxe, weight: 2, enchants: {efficiency: 5, unbreaking: 3, silk_touch: 1}}
+      "7":
+        slots: {min: 18, max: 23}
+        pool:
+          - {item: diamond, min: 16, max: 24, weight: 16}
+          - {item: emerald, min: 12, max: 16, weight: 10}
+          - {item: diamond_block, min: 2, max: 3, weight: 8}
+          - {item: iron_block, min: 4, max: 6, weight: 6}
+          - {item: gold_block, min: 3, max: 4, weight: 5}
+          - {item: amethyst_shard, min: 16, max: 32, weight: 6}
+          - {item: netherite_scrap, min: 1, max: 1, weight: 4}
+          - {item: diamond_shovel, weight: 3, enchants: {efficiency: 5, unbreaking: 3, mending: 1}}
+        featured:
+          - {item: netherite_ingot, min: 1, max: 1, weight: 4}
+          - {item: netherite_pickaxe, weight: 2, enchants: {efficiency: 5, unbreaking: 3}}
+      "8":
+        slots: {min: 20, max: 25}
+        pool:
+          - {item: diamond, min: 20, max: 32, weight: 16}
+          - {item: emerald, min: 16, max: 24, weight: 10}
+          - {item: diamond_block, min: 3, max: 4, weight: 8}
+          - {item: netherite_scrap, min: 1, max: 2, weight: 6}
+          - {item: amethyst_shard, min: 32, max: 64, weight: 6}
+          - {item: netherite_axe, weight: 3, enchants: {efficiency: 5, unbreaking: 3}}
+          - {item: netherite_shovel, weight: 3, enchants: {efficiency: 5, unbreaking: 3}}
+        featured:
+          - {item: netherite_ingot, min: 1, max: 2, weight: 4}
+          - {custom: dimensional_chest, weight: 2}
+          - {item: netherite_pickaxe, weight: 2, enchants: {efficiency: 5, unbreaking: 3, fortune: 3, mending: 1}}
   magical:
     display-name: "マジカルクレート"
     levels:
@@ -288,6 +426,69 @@ crates:
           - {item: enchanted_book, weight: 2, enchants: {power: 5}}
           - {item: enchanted_book, weight: 2, enchants: {fortune: 3}}
           - {item: enchanted_book, weight: 1, enchants: {infinity: 1}}
+      "6":
+        slots: {min: 16, max: 21}
+        pool:
+          - {item: enchanted_book, weight: 5, enchants: {mending: 1}}
+          - {item: enchanted_book, weight: 5, enchants: {sharpness: 5}}
+          - {item: enchanted_book, weight: 5, enchants: {protection: 4}}
+          - {item: enchanted_book, weight: 4, enchants: {feather_falling: 4}}
+          - {item: enchanted_book, weight: 4, enchants: {efficiency: 5}}
+          - {item: enchanted_book, weight: 3, enchants: {fortune: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {looting: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {power: 5}}
+          - {item: splash_potion, potion: strong_healing, weight: 6}
+          - {item: potion, potion: strong_strength, weight: 5}
+          - {item: potion, potion: long_fire_resistance, weight: 5}
+          - {item: potion, potion: long_slow_falling, weight: 5}
+          - {item: potion, potion: strong_regeneration, weight: 4}
+          - {item: golden_apple, min: 2, max: 4, weight: 6}
+          - {item: enchanted_golden_apple, min: 1, max: 1, weight: 1}
+        featured:
+          - {item: enchanted_book, weight: 3, enchants: {mending: 1, unbreaking: 3}}
+          - {item: enchanted_book, weight: 2, enchants: {sharpness: 5, sweeping_edge: 3}}
+          - {item: enchanted_book, weight: 2, enchants: {protection: 4, thorns: 3}}
+      "7":
+        slots: {min: 18, max: 23}
+        pool:
+          - {item: enchanted_book, weight: 5, enchants: {mending: 1}}
+          - {item: enchanted_book, weight: 4, enchants: {sharpness: 5}}
+          - {item: enchanted_book, weight: 4, enchants: {protection: 4}}
+          - {item: enchanted_book, weight: 4, enchants: {unbreaking: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {looting: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {swift_sneak: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {depth_strider: 3}}
+          - {item: splash_potion, potion: strong_healing, weight: 6}
+          - {item: lingering_potion, potion: strong_healing, weight: 3}
+          - {item: potion, potion: strong_strength, weight: 5}
+          - {item: potion, potion: long_slow_falling, weight: 5}
+          - {item: potion, potion: strong_regeneration, weight: 4}
+          - {item: golden_apple, min: 4, max: 8, weight: 6}
+          - {item: enchanted_golden_apple, min: 1, max: 1, weight: 2}
+        featured:
+          - {custom: modifier_revival, weight: 3}
+          - {item: enchanted_book, weight: 2, enchants: {mending: 1, unbreaking: 3, protection: 4}}
+          - {item: enchanted_golden_apple, min: 1, max: 2, weight: 2}
+      "8":
+        slots: {min: 20, max: 25}
+        pool:
+          - {item: enchanted_book, weight: 5, enchants: {mending: 1}}
+          - {item: enchanted_book, weight: 4, enchants: {sharpness: 5}}
+          - {item: enchanted_book, weight: 4, enchants: {protection: 4}}
+          - {item: enchanted_book, weight: 4, enchants: {unbreaking: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {looting: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {fortune: 3}}
+          - {item: enchanted_book, weight: 3, enchants: {infinity: 1}}
+          - {item: splash_potion, potion: strong_healing, weight: 6}
+          - {item: lingering_potion, potion: strong_healing, weight: 4}
+          - {item: lingering_potion, potion: strong_strength, weight: 3}
+          - {item: potion, potion: long_slow_falling, weight: 4}
+          - {item: golden_apple, min: 6, max: 10, weight: 6}
+          - {item: enchanted_golden_apple, min: 1, max: 2, weight: 3}
+        featured:
+          - {custom: modifier_revival, min: 2, max: 2, weight: 3}
+          - {custom: dimensional_chest, weight: 2}
+          - {item: enchanted_book, weight: 2, enchants: {mending: 1, unbreaking: 3, sharpness: 5, looting: 3}}
   soldier:
     display-name: "ソルジャークレート"
     levels:
@@ -357,3 +558,50 @@ crates:
           - {item: diamond_sword, weight: 2, enchants: {sharpness: 4, unbreaking: 3, fire_aspect: 1}}
           - {item: bow, weight: 2, enchants: {power: 5, unbreaking: 3, flame: 1}}
           - {item: diamond_chestplate, weight: 2, enchants: {protection: 4, unbreaking: 3}}
+      "6":
+        slots: {min: 16, max: 21}
+        pool:
+          - {item: golden_carrot, min: 24, max: 32, weight: 8}
+          - {item: golden_apple, min: 4, max: 8, weight: 6}
+          - {item: arrow, min: 64, max: 64, weight: 5}
+          - {item: spectral_arrow, min: 16, max: 32, weight: 4}
+          - {item: shield, weight: 3, enchants: {unbreaking: 3}}
+          - {item: diamond_helmet, weight: 4, enchants: {protection: 4, unbreaking: 3}}
+          - {item: diamond_leggings, weight: 4, enchants: {protection: 4, unbreaking: 3}}
+          - {item: diamond_boots, weight: 4, enchants: {protection: 4, feather_falling: 4}}
+          - {item: crossbow, weight: 3, enchants: {quick_charge: 3, multishot: 1}}
+        featured:
+          - {item: diamond_sword, weight: 3, enchants: {sharpness: 5, unbreaking: 3, looting: 3}}
+          - {item: bow, weight: 2, enchants: {power: 5, unbreaking: 3, infinity: 1}}
+          - {item: diamond_chestplate, weight: 2, enchants: {protection: 4, unbreaking: 3}}
+      "7":
+        slots: {min: 18, max: 23}
+        pool:
+          - {item: golden_carrot, min: 32, max: 48, weight: 8}
+          - {item: golden_apple, min: 6, max: 10, weight: 6}
+          - {item: arrow, min: 64, max: 64, weight: 5}
+          - {item: amethyst_shard, min: 16, max: 32, weight: 5}
+          - {item: diamond_helmet, weight: 4, enchants: {protection: 4, unbreaking: 3, respiration: 3}}
+          - {item: diamond_leggings, weight: 4, enchants: {protection: 4, unbreaking: 3, swift_sneak: 3}}
+          - {item: diamond_boots, weight: 4, enchants: {protection: 4, feather_falling: 4, depth_strider: 3}}
+          - {item: bow, weight: 3, enchants: {power: 5, unbreaking: 3, flame: 1}}
+        featured:
+          - {custom: sniper_rifle, weight: 2}
+          - {item: netherite_sword, weight: 3, enchants: {sharpness: 5, unbreaking: 3}}
+          - {item: netherite_chestplate, weight: 2, enchants: {protection: 4, unbreaking: 3}}
+      "8":
+        slots: {min: 20, max: 25}
+        pool:
+          - {item: golden_carrot, min: 48, max: 64, weight: 8}
+          - {item: golden_apple, min: 8, max: 12, weight: 6}
+          - {item: enchanted_golden_apple, min: 1, max: 2, weight: 3}
+          - {item: amethyst_shard, min: 32, max: 64, weight: 6}
+          - {item: arrow, min: 64, max: 64, weight: 4}
+          - {item: netherite_helmet, weight: 3, enchants: {protection: 4, unbreaking: 3}}
+          - {item: netherite_leggings, weight: 3, enchants: {protection: 4, unbreaking: 3}}
+          - {item: netherite_boots, weight: 3, enchants: {protection: 4, feather_falling: 4, unbreaking: 3}}
+          - {item: bow, weight: 3, enchants: {power: 5, unbreaking: 3, infinity: 1}}
+        featured:
+          - {custom: sniper_rifle, weight: 3}
+          - {item: netherite_chestplate, weight: 2, enchants: {protection: 4, unbreaking: 3, mending: 1}}
+          - {item: netherite_sword, weight: 2, enchants: {sharpness: 5, unbreaking: 3, looting: 3, mending: 1}}

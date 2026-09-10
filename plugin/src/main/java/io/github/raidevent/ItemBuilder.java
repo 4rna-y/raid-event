@@ -28,6 +28,9 @@ public final class ItemBuilder {
 
     public static ItemStack build(CrateTable.RolledItem rolled, Logger logger) {
         CrateTable.LootEntry entry = rolled.entry();
+        if (entry.custom() != null) {
+            return CustomItems.create(entry.custom(), rolled.amount());
+        }
         ItemStack stack = new ItemStack(entry.item(), rolled.amount());
 
         if (!entry.enchants().isEmpty()) {

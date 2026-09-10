@@ -28,31 +28,64 @@ class ProgressionScoreTest {
     // ------------------------------------------------------------------ レベル境界
 
     @Test
-    @DisplayName("スコア → 基礎レベルの境界 (10 / 19 / 28)")
+    @DisplayName("スコア → 基礎レベルの境界 (10 / 19 / 28 / 36 / 42 / 50 / 58)、節目が無ければ L5 で止まる")
     void levelBands() {
         assertEquals(1, none.levelOf(0, false));
         assertEquals(1, none.levelOf(9.9, false));
         assertEquals(2, none.levelOf(10, false));
         assertEquals(3, none.levelOf(19, false));
         assertEquals(4, none.levelOf(28, false));
+        assertEquals(5, none.levelOf(36, false), "L5 は昼にも出る");
+        assertEquals(5, none.levelOf(42, false), "エンドラ未討伐なら L5 まで");
+        Set<String> all = Set.of(Milestones.DRAGON, Milestones.WITHER, Milestones.WARDEN);
+        assertEquals(6, none.levelOf(42, false, all));
+        assertEquals(7, none.levelOf(50, false, all));
+        assertEquals(7, none.levelOf(58, false, all), "昼は L7 まで");
+        assertEquals(8, none.levelOf(58, true, all), "L8 は夜だけ");
     }
 
     @Test
-    @DisplayName("昼は上限 L4。L5 は夜 (+1) でしか出ない")
+    @DisplayName("節目の上限: エンドラ → 6、+ どちらか → 7、+ 両方 → 8")
+    void milestoneCaps() {
+        assertEquals(6, none.levelOf(1000, true, Set.of(Milestones.DRAGON)));
+        assertEquals(7, none.levelOf(1000, true, Set.of(Milestones.DRAGON, Milestones.WITHER)));
+        assertEquals(7, none.levelOf(1000, true, Set.of(Milestones.DRAGON, Milestones.WARDEN)));
+        assertEquals(5, none.levelOf(1000, true, Set.of(Milestones.WITHER, Milestones.WARDEN)), "エンドラ無しでは上がらない");
+        assertEquals(6, Milestones.cap(Set.of(Milestones.DRAGON)));
+        assertEquals(18.0, Milestones.score(Set.of(Milestones.DRAGON, Milestones.WITHER, Milestones.WARDEN)), 0.001);
+    }
+
+    @Test
+    @DisplayName("昼は上限 L7。夜 +1 で L8 は夜だけ。節目が無ければ昼も夜も L5 まで")
     void dayCapAndNightBump() {
-        assertEquals(4, none.levelOf(1000, false), "昼はどれだけ進行しても L4 まで");
+        Set<String> all = Set.of(Milestones.DRAGON, Milestones.WITHER, Milestones.WARDEN);
+        assertEquals(7, none.levelOf(1000, false, all), "昼はどれだけ進行しても L7 まで");
+        assertEquals(8, none.levelOf(1000, true, all));
         assertEquals(5, none.levelOf(28, true), "夜は同じ進行度で必ず1段上がる");
-        assertEquals(5, none.levelOf(1000, true));
+        assertEquals(5, none.levelOf(1000, true), "節目が無ければ夜でも L5");
         assertEquals(2, none.levelOf(0, true), "序盤でも夜なら L2");
     }
 
     @Test
-    @DisplayName("夜は同じスコアで必ず昼よりレベルが高い")
+    @DisplayName("上限に届くまでは、夜は同じスコアで必ず昼よりレベルが高い")
     void nightAlwaysBeatsDay() {
-        for (double score = 0; score <= 60; score += 0.5) {
-            assertTrue(none.levelOf(score, true) > none.levelOf(score, false),
-                    "score=" + score);
+        Set<String> all = Set.of(Milestones.DRAGON, Milestones.WITHER, Milestones.WARDEN);
+        for (double score = 0; score < 58; score += 0.5) {
+            assertTrue(none.levelOf(score, true, all) > none.levelOf(score, false, all), "score=" + score);
         }
+        for (double score = 0; score < 36; score += 0.5) {
+            assertTrue(none.levelOf(score, true) > none.levelOf(score, false), "score=" + score);
+        }
+    }
+
+    @Test
+    @DisplayName("エリトラ +3、ネザースター (かビーコンの実績) +3")
+    void endgameItemsScore() {
+        Player player = playerWith(new Material[4], new Material[] {Material.ELYTRA, Material.NETHER_STAR});
+        assertEquals(6.0, none.score(player, 0), 0.001);
+        ProgressionScore beacon = new ProgressionScore((p, key) -> key.equals(ProgressionScore.CREATE_BEACON), new YamlConfiguration());
+        assertEquals(3.0, beacon.score(playerWith(new Material[4], new Material[0]), 0), 0.001);
+        assertEquals(24.0, none.score(player, 0, Set.of(Milestones.DRAGON, Milestones.WITHER, Milestones.WARDEN)), 0.001);
     }
 
     // ------------------------------------------------------------------ スコアの内訳

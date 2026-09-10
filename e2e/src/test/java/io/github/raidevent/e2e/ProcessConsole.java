@@ -72,6 +72,36 @@ final class ProcessConsole implements AutoCloseable {
         return lines.stream().anyMatch(line -> line.contains(fragment));
     }
 
+    /** 今までに読んだ行数。{@link #awaitSince} と組み合わせて「この後に出た行」だけを待つ。 */
+    int mark() {
+        return lines.size();
+    }
+
+    /** mark 以降に fragment を含む行が出るまで待つ。前のテストが出した同じ文言に釣られない。 */
+    void awaitSince(String fragment, int mark, Duration timeout) throws InterruptedException {
+        Instant deadline = Instant.now().plus(timeout);
+        while (Instant.now().isBefore(deadline)) {
+            if (sawLineSince(fragment, mark)) {
+                return;
+            }
+            if (!process.isAlive()) {
+                throw new AssertionError("サーバーが終了した。待っていたもの: " + fragment + tail());
+            }
+            Thread.sleep(200);
+        }
+        throw new AssertionError("待ち時間を超えた: " + fragment + tail());
+    }
+
+    boolean sawLineSince(String fragment, int mark) {
+        List<String> snapshot = List.copyOf(lines);
+        for (int i = Math.min(mark, snapshot.size()); i < snapshot.size(); i++) {
+            if (snapshot.get(i).contains(fragment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** fragment を含む行が出るまで待つ。出なければ例外。 */
     void await(String fragment, Duration timeout) throws InterruptedException {
         Instant deadline = Instant.now().plus(timeout);

@@ -26,7 +26,7 @@ public final class RaidEventPlugin extends JavaPlugin {
             return;
         }
 
-        this.manager = new RaidManager(this, new Random());
+        this.manager = new RaidManager(this, new Random(), new Milestones(getServer(), "raidevent"));
         // テーブルの不備は起動時に落として気付く (黙って痩せたレイドを回さない)
         manager.load(getConfig());
 

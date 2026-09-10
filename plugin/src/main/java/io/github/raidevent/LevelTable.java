@@ -19,15 +19,21 @@ import org.bukkit.entity.EntityType;
  */
 public record LevelTable(Map<Integer, Level> levels) {
 
-    /** 昼の基礎レベルの上限。Level 5 は夜 (+1) でしか出ない。 */
-    public static final int MAX_LEVEL = 5;
-    public static final int DAY_MAX_LEVEL = 4;
+    /** レベルの上限。昼の基礎レベルは {@link #DAY_MAX_LEVEL} まで、夜は +1 で Level 8 は夜にしか出ない。 */
+    public static final int MAX_LEVEL = 8;
+    public static final int DAY_MAX_LEVEL = 7;
 
-    /** 一撃事故の元になるので使わないモブ。 */
-    static final Set<EntityType> FORBIDDEN = Set.of(EntityType.CREEPER, EntityType.RAVAGER);
+    /**
+     * 使わないモブ。一撃事故 (クリーパー・ガスト)、ノックバック事故 (ラヴェジャー・ホグリン・ゾグリン・ブリーズ)、
+     * 落下事故 (シュルカーの浮遊)、そして目標そのもの (ウィザー・ウォーデン・エンドラ)。
+     */
+    static final Set<EntityType> FORBIDDEN = Set.of(EntityType.CREEPER, EntityType.RAVAGER,
+            EntityType.GHAST, EntityType.HOGLIN, EntityType.ZOGLIN, EntityType.BREEZE, EntityType.SHULKER,
+            EntityType.WITHER, EntityType.WARDEN, EntityType.ENDER_DRAGON);
 
-    /** 弓・クロスボウ持ち。同時に多いと集中砲火で即死するため、ウェーブごとに上限を課す。 */
-    static final Set<EntityType> RANGED = Set.of(EntityType.SKELETON, EntityType.PILLAGER);
+    /** 遠距離攻撃をするモブ。同時に多いと集中砲火で即死するため、ウェーブごとに上限を課す。 */
+    static final Set<EntityType> RANGED = Set.of(EntityType.SKELETON, EntityType.PILLAGER,
+            EntityType.STRAY, EntityType.BOGGED, EntityType.BLAZE, EntityType.ILLUSIONER);
     static final int RANGED_CAP_PER_WAVE = 4;
 
     /** レベル1つ。倍率はそのレベルの全モブへかかる (子ゾンビには speed をかけない)。 */

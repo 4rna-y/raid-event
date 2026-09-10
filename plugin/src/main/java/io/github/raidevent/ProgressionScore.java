@@ -2,6 +2,7 @@ package io.github.raidevent;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -13,9 +14,9 @@ import org.bukkit.inventory.ItemStack;
 /**
  * ゲーム進行度スコアとレベル決定。
  *
- * <p>この企画のゴールはエンドラ討伐で、エンドは突入=不可帰還点。だからスコアは
- * 「エンド突入前に稼げるもの」だけで構成する (装備・ネザー系の実績・経過日数)。
- * エンド到達や討伐をスコアに入れても、加算された頃にはレイドに参加する局面が無い。
+ * <p>目標は「エンドラ → ウィザー & ウォーデン」。エンド突入前は装備・ネザー系の実績・経過日数で、
+ * 突入後はワールド単位の節目 ({@link Milestones}) とエリトラ・ビーコンで測る。
+ * 節目はスコアに足すだけでなく、レベルの上限にもなる (エンドラ未討伐なら L5 まで)。
  *
  * <p>ワールドは wiah でいつでも消えるので、進行度は毎回その場で計算する。永続化しない。
  */
@@ -32,11 +33,14 @@ public final class ProgressionScore {
             NamespacedKey.minecraft("nether/obtain_blaze_rod");
     public static final NamespacedKey EYE_SPY =
             NamespacedKey.minecraft("story/follow_ender_eye");
+    public static final NamespacedKey CREATE_BEACON =
+            NamespacedKey.minecraft("nether/create_beacon");
 
     /** エンダーアイ相当と数えるパールの数。 */
     static final int PEARLS_FOR_EYES = 12;
 
-    public static final List<Integer> DEFAULT_LEVEL_THRESHOLDS = List.of(10, 19, 28);
+    /** このスコア以上で基礎レベルが L2 / L3 / … / L8。 */
+    public static final List<Integer> DEFAULT_LEVEL_THRESHOLDS = List.of(10, 19, 28, 36, 42, 50, 58);
     public static final int DEFAULT_DAYS_PER_POINT = 5;
     public static final int DEFAULT_DAYS_MAX_POINTS = 6;
 
@@ -48,29 +52,43 @@ public final class ProgressionScore {
     public ProgressionScore(AdvancementChecker advancements, ConfigurationSection config) {
         this.advancements = advancements;
         List<Integer> configured = config.getIntegerList("score.level-thresholds");
-        this.thresholds = configured.size() == LevelTable.DAY_MAX_LEVEL - 1
+        this.thresholds = configured.size() == LevelTable.MAX_LEVEL - 1
                 ? List.copyOf(configured) : DEFAULT_LEVEL_THRESHOLDS;
         this.daysPerPoint = Math.max(1,
                 config.getInt("score.days-per-point", DEFAULT_DAYS_PER_POINT));
         this.daysMaxPoints = config.getInt("score.days-max-points", DEFAULT_DAYS_MAX_POINTS);
     }
 
-    /** プレイヤー1人ぶんのスコア。 */
+    /** プレイヤー1人ぶんのスコア (節目は含まない)。 */
     public double score(Player player, long worldFullTime) {
         return armorScore(player) + weaponScore(player) + enchantScore(player)
-                + advancementScore(player) + daysScore(worldFullTime);
+                + advancementScore(player) + daysScore(worldFullTime)
+                + elytraScore(player) + beaconScore(player);
     }
 
-    /** 参加者の平均スコアから基礎レベルを出し、夜なら +1 する。 */
-    public int levelFor(Collection<Player> players, World world, boolean night) {
+    /** 節目を足したスコア。 */
+    public double score(Player player, long worldFullTime, Set<String> achieved) {
+        return score(player, worldFullTime) + Milestones.score(achieved);
+    }
+
+    /** 参加者の平均スコアから基礎レベルを出し、夜なら +1、節目の上限で止める。 */
+    public int levelFor(Collection<Player> players, World world, boolean night, Set<String> achieved) {
         double average = players.stream()
-                .mapToDouble(player -> score(player, world.getFullTime()))
+                .mapToDouble(player -> score(player, world.getFullTime(), achieved))
                 .average().orElse(0);
-        return levelOf(average, night);
+        return levelOf(average, night, achieved);
     }
 
-    /** スコア → レベル。昼は上限 {@value LevelTable#DAY_MAX_LEVEL}、夜は +1。 */
+    /** 節目無し (エンド突入前) の判定。 */
     public int levelOf(double averageScore, boolean night) {
+        return levelOf(averageScore, night, Set.of());
+    }
+
+    /**
+     * スコア → レベル。昼は上限 {@value LevelTable#DAY_MAX_LEVEL}、夜は +1。
+     * 最後に節目の上限 ({@link Milestones#cap}) で止める。
+     */
+    public int levelOf(double averageScore, boolean night, Set<String> achieved) {
         int base = 1;
         for (int threshold : thresholds) {
             if (averageScore >= threshold) {
@@ -78,7 +96,8 @@ public final class ProgressionScore {
             }
         }
         base = Math.min(base, LevelTable.DAY_MAX_LEVEL);
-        return night ? Math.min(base + 1, LevelTable.MAX_LEVEL) : base;
+        int level = night ? Math.min(base + 1, LevelTable.MAX_LEVEL) : base;
+        return Math.min(level, Milestones.cap(achieved));
     }
 
     /** 夜かどうか。ベッドで寝られる時間帯を夜と数える。 */
@@ -154,9 +173,33 @@ public final class ProgressionScore {
         return score;
     }
 
+    /** エリトラを持っている (装備も含む) と +3。エンドシティまで行った印。 */
+    double elytraScore(Player player) {
+        return has(player, Material.ELYTRA) ? 3 : 0;
+    }
+
+    /** ビーコン作成の実績かネザースターの保有で +3。ウィザーを倒した印。 */
+    double beaconScore(Player player) {
+        return advancements.isDone(player, CREATE_BEACON) || has(player, Material.NETHER_STAR) ? 3 : 0;
+    }
+
     double daysScore(long worldFullTime) {
         long days = worldFullTime / 24000L;
         return Math.min(days / daysPerPoint, daysMaxPoints);
+    }
+
+    private static boolean has(Player player, Material material) {
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item != null && item.getType() == material) {
+                return true;
+            }
+        }
+        for (ItemStack item : player.getInventory().getArmorContents()) {
+            if (item != null && item.getType() == material) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasEyeMaterials(Player player) {

@@ -64,6 +64,7 @@ public final class RaidManager {
 
     private final RaidEventPlugin plugin;
     private final Random random;
+    private final Milestones milestones;
 
     private Settings settings;
     private LevelTable levels;
@@ -79,9 +80,14 @@ public final class RaidManager {
     private boolean cleaning;
     private BossBar bossBar;
 
-    public RaidManager(RaidEventPlugin plugin, Random random) {
+    public RaidManager(RaidEventPlugin plugin, Random random, Milestones milestones) {
         this.plugin = plugin;
         this.random = random;
+        this.milestones = milestones;
+    }
+
+    public Milestones milestones() {
+        return milestones;
     }
 
     /** 設定とテーブルを読み直す。不備があれば例外 (起動時に気付くべきもの)。 */
@@ -212,7 +218,8 @@ public final class RaidManager {
             return null;
         }
         boolean night = ProgressionScore.isNight(world);
-        int level = forcedLevel > 0 ? forcedLevel : score.levelFor(eligible, world, night);
+        java.util.Set<String> achieved = milestones.achieved();
+        int level = forcedLevel > 0 ? forcedLevel : score.levelFor(eligible, world, night, achieved);
         String crateId = forcedCrate != null ? forcedCrate : randomCrateId();
 
         current = new Raid(site, level, crateId, night,
@@ -221,8 +228,8 @@ public final class RaidManager {
         MapService.give(plugin, eligible, current, crateName);
         broadcast("<yellow>レイドが発生した! 配られた地図を確認せよ。"
                 + " <gray>(" + crateName + " / Level " + level + ")");
-        plugin.getSLF4JLogger().info("レイド生成: level={} crate={} night={} 地点=({}, {}, {})",
-                level, crateId, night,
+        plugin.getSLF4JLogger().info("レイド生成: level={} crate={} night={} 節目={} 地点=({}, {}, {})",
+                level, crateId, night, achieved,
                 site.getBlockX(), site.getBlockY(), site.getBlockZ());
         return current;
     }
@@ -377,6 +384,14 @@ public final class RaidManager {
             throw new IllegalArgumentException("レベルは 1〜" + LevelTable.MAX_LEVEL);
         }
         return create(overworld(), center, level, crateId);
+    }
+
+    /** 節目が増えた。レベルの上限が上がったことを知らせる。 */
+    public void onMilestone(org.bukkit.entity.EntityType type) {
+        java.util.Set<String> achieved = milestones.achieved();
+        broadcast("<gold>" + (type == org.bukkit.entity.EntityType.WITHER ? "ウィザー" : "ウォーデン")
+                + " が討伐された。<gray>レイドは Level " + Milestones.cap(achieved) + " まで出るようになった。");
+        plugin.getSLF4JLogger().info("節目: {} (達成 {})", type, achieved);
     }
 
     public Optional<Raid> current() {

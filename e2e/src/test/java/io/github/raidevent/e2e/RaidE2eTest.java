@@ -81,10 +81,10 @@ class RaidE2eTest {
 
     @Test
     @Order(1)
-    @DisplayName("本番の jar が 26.1 のサーバーでも読み込まれ、テーブルが5レベル3クレートで揃う")
+    @DisplayName("本番の jar が 26.1 のサーバーでも読み込まれ、テーブルが 8 レベル 3 クレートで揃う")
     void pluginLoads() throws Exception {
         console.send("raidevent status");
-        console.await("レベル: 5", Duration.ofSeconds(30));
+        console.await("レベル: 8", Duration.ofSeconds(30));
         assertTrue(console.sawLine("クレート: 3"), "クレートが3種登録されていない" + console.tail());
     }
 
@@ -92,22 +92,29 @@ class RaidE2eTest {
     @Order(2)
     @DisplayName("生成 → 地図配布 → 接近で発火 → 全ウェーブ討伐 → 報酬チェスト設置")
     void fullRaidRun() throws Exception {
+        // 発火すると地図は回収されるので、ボットが地図を観測してから地点へ運ぶ (2 段階)
+        int[] markHolder = {0};
         BotRunner.Result result = BotRunner.run(botDir, "raid_run",
                 TestServerDir.SERVER_PORT, BOT, observation -> {
-                    if (!observation.event().equals("spawned")) {
-                        return;
-                    }
                     try {
-                        // モブに殴られても死なないようにしてから、L5 マジカルを生成する
-                        console.send("effect give E2eRaider minecraft:resistance 99999 255 true");
-                        console.send("raidevent spawn 5 magical E2eRaider");
-                        console.await("レイド生成:", Duration.ofSeconds(30));
-                        int[] site = coords(SITE);
+                        if (observation.event().equals("spawned")) {
+                            // モブに殴られても死なないようにしてから、L5 マジカルを生成する
+                            console.send("effect give E2eRaider minecraft:resistance 99999 255 true");
+                            markHolder[0] = console.mark();
+                            console.send("raidevent spawn 5 magical E2eRaider");
+                            console.awaitSince("レイド生成:", markHolder[0], Duration.ofSeconds(30));
+                            return;
+                        }
+                        if (!observation.event().equals("map_received")) {
+                            return;
+                        }
+                        int mark = markHolder[0];
+                        int[] site = coords(SITE, mark);
 
                         // 地点へ運んで発火させる (16m 以内に入ればトリガー)
                         console.send("tp E2eRaider %d %d %d".formatted(
                                 site[0], site[1] + 1, site[2]));
-                        console.await("ウェーブ 1/5", Duration.ofSeconds(30));
+                        console.awaitSince("ウェーブ 1/5", mark, Duration.ofSeconds(30));
 
                         // 共通タグを kill してウェーブを進める。ウェーブ間隔 (40 tick) が
                         // あるので、成功が出るまで殴り続ける
@@ -154,12 +161,13 @@ class RaidE2eTest {
                     }
                     try {
                         console.send("effect give E2eWatcher minecraft:resistance 99999 255 true");
+                        int mark = console.mark();
                         console.send("raidevent spawn 1 miner E2eWatcher");
-                        console.await("レイド生成:", Duration.ofSeconds(30));
-                        int[] site = coords(SITE);
+                        console.awaitSince("レイド生成:", mark, Duration.ofSeconds(30));
+                        int[] site = coords(SITE, mark);
                         console.send("tp E2eWatcher %d %d %d".formatted(
                                 site[0], site[1] + 1, site[2]));
-                        console.await("ウェーブ 1/2", Duration.ofSeconds(30));
+                        console.awaitSince("ウェーブ 1/2", mark, Duration.ofSeconds(30));
 
                         // 300 ブロック逃がす。唯一のプレイヤーから 128m を超えたモブは
                         // 即デスポーン対象になる。落下は resistance 255 が受け止める。
@@ -168,7 +176,7 @@ class RaidE2eTest {
                                 site[0] + 300, site[2]));
                         // 保険の放棄検出 (abandon-ticks=1200) より先に、デスポーン起点の
                         // キャンセルが出るはず
-                        console.await("レイドキャンセル", Duration.ofSeconds(90));
+                        console.awaitSince("レイドキャンセル", mark, Duration.ofSeconds(90));
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw new AssertionError("中断された", e);
@@ -233,9 +241,14 @@ class RaidE2eTest {
 
     /** コンソールログから直近の座標を取り出す。 */
     private int[] coords(Pattern pattern) {
+        return coords(pattern, 0);
+    }
+
+    /** mark 以降で最新のもの。前のテストのレイドの座標を拾わないため。 */
+    private int[] coords(Pattern pattern, int mark) {
         // 最新のものが欲しいので後ろから探す
         List<String> lines = console.lines();
-        for (int i = lines.size() - 1; i >= 0; i--) {
+        for (int i = lines.size() - 1; i >= mark; i--) {
             Matcher matcher = pattern.matcher(lines.get(i));
             if (matcher.find()) {
                 return new int[] {Integer.parseInt(matcher.group(1)),

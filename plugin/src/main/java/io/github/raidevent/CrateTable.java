@@ -73,7 +73,11 @@ public record CrateTable(Map<String, Crate> crates) {
      * PotionType 名 (potion / splash_potion / lingering_potion のときだけ意味を持つ)。
      */
     public record LootEntry(Material item, int min, int max, int weight,
-            Map<String, Integer> enchants, String potion) {
+            Map<String, Integer> enchants, String potion, String custom) {
+
+        public LootEntry(Material item, int min, int max, int weight, Map<String, Integer> enchants, String potion) {
+            this(item, min, max, weight, enchants, potion, null);
+        }
     }
 
     /** 抽選済みの1スロットぶん。 */
@@ -146,8 +150,12 @@ public record CrateTable(Map<String, Crate> crates) {
     private static List<LootEntry> parseEntries(String id, int number, List<Map<?, ?>> maps) {
         List<LootEntry> entries = new ArrayList<>();
         for (Map<?, ?> map : maps) {
-            String itemName = String.valueOf(map.get("item"));
-            Material material = Material.matchMaterial(itemName);
+            // custom: 特別なアイテム (異次元チェストなど)。土台は CustomItems が決める
+            String custom = map.get("custom") == null ? null : String.valueOf(map.get("custom"));
+            String itemName = custom != null ? custom : String.valueOf(map.get("item"));
+            Material material = custom != null
+                    ? CustomItems.baseOf(custom).orElse(null)
+                    : Material.matchMaterial(itemName);
             if (material == null) {
                 throw new IllegalArgumentException(
                         "crates." + id + ".levels." + number + " に知らないアイテム: " + itemName);
@@ -169,7 +177,7 @@ public record CrateTable(Map<String, Crate> crates) {
                         enchants.put(String.valueOf(name), LevelTable.intOf(level, 1)));
             }
             String potion = map.get("potion") == null ? null : String.valueOf(map.get("potion"));
-            entries.add(new LootEntry(material, min, max, weight, Map.copyOf(enchants), potion));
+            entries.add(new LootEntry(material, min, max, weight, Map.copyOf(enchants), potion, custom));
         }
         return List.copyOf(entries);
     }

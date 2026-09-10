@@ -12,6 +12,7 @@ import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Phantom;
+import org.bukkit.entity.PiglinAbstract;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -72,6 +73,10 @@ final class MobSpawner {
         }
         if (mob instanceof Phantom phantom) {
             phantom.setShouldBurnInDay(false);
+        }
+        if (mob instanceof PiglinAbstract piglin) {
+            // オーバーワールドでは 15 秒でゾンビ化して別のモブになる。レイドの数から抜けてしまう
+            piglin.setImmuneToZombification(true);
         }
 
         equip(mob, entry, plugin);

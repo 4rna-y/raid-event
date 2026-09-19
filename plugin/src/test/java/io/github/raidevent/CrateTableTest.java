@@ -93,7 +93,7 @@ class CrateTableTest {
     }
 
     @Test
-    @DisplayName("特別なアイテムは L7/L8 の目玉枠にだけあり、土台が解決されている")
+    @DisplayName("特別なアイテムは L6 以上の目玉枠にだけあり、土台が解決されている")
     void customItemsOnlyInTopFeatured() {
         java.util.Set<String> found = new java.util.HashSet<>();
         for (CrateTable.Crate crate : table.crates().values()) {
@@ -103,14 +103,15 @@ class CrateTableTest {
                 }
                 for (CrateTable.LootEntry entry : crate.level(number).featured()) {
                     if (entry.custom() != null) {
-                        assertTrue(number >= 7, crate.id() + " L" + number + " に custom");
+                        assertTrue(number >= 6, crate.id() + " L" + number + " に custom");
                         assertEquals(CustomItems.baseOf(entry.custom()).orElseThrow(), entry.item());
                         found.add(entry.custom());
                     }
                 }
             }
         }
-        assertEquals(java.util.Set.of(CustomItems.DIMENSIONAL_CHEST, CustomItems.SNIPER_RIFLE, CustomItems.MODIFIER_REVIVAL), found);
+        assertEquals(java.util.Set.of(CustomItems.DIMENSIONAL_CHEST, CustomItems.SNIPER_RIFLE,
+                CustomItems.EXPLOSIVE_BOW, CustomItems.MODIFIER_REVIVAL), found);
     }
 
     @Test

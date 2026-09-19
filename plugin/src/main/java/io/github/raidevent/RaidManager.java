@@ -33,7 +33,7 @@ import org.bukkit.entity.Player;
 public final class RaidManager {
 
     /** config.yml の raid.* の既定値。DefaultConfigTest で同梱 yml と突き合わせる。 */
-    public static final double DEFAULT_DAILY_CHANCE = 0.2;
+    public static final double DEFAULT_DAILY_CHANCE = 0.5;
     public static final long DEFAULT_EXPIRE_TICKS = 12000;
     public static final int DEFAULT_TRIGGER_RADIUS = 16;
     public static final int DEFAULT_MIN_DISTANCE = 200;
@@ -69,6 +69,7 @@ public final class RaidManager {
     private Settings settings;
     private LevelTable levels;
     private CrateTable crates;
+    private ExtraDrops extraDrops;
     private ProgressionScore score;
 
     private Raid current;
@@ -99,6 +100,7 @@ public final class RaidManager {
         this.settings = Settings.from(config);
         this.levels = LevelTable.parse(config);
         this.crates = CrateTable.parse(config);
+        this.extraDrops = ExtraDrops.parse(config);
         this.score = new ProgressionScore((player, key) -> {
             Advancement advancement = Bukkit.getAdvancement(key);
             return advancement != null && player.getAdvancementProgress(advancement).isDone();
@@ -280,7 +282,7 @@ public final class RaidManager {
     private void finish(World world) {
         Raid raid = current;
         CrateTable.Crate crate = crates.crate(raid.crateId);
-        placeChest(world, raid.site, crate.level(raid.level));
+        placeChest(world, raid.site, crate.level(raid.level), raid.level);
         broadcast("<green>レイド成功! <yellow>" + crate.displayName() + " (Level " + raid.level
                 + ")<green> を <white>(" + raid.site.getBlockX() + ", " + raid.site.getBlockY()
                 + ", " + raid.site.getBlockZ() + ")<green> に設置した。");
@@ -289,14 +291,22 @@ public final class RaidManager {
         clear();
     }
 
-    private void placeChest(World world, Location site, CrateTable.CrateLevel crateLevel) {
+    private void placeChest(World world, Location site, CrateTable.CrateLevel crateLevel, int level) {
         var block = world.getBlockAt(site);
         block.setType(Material.CHEST);
         if (!(block.getState() instanceof Chest chest)) {
             plugin.getSLF4JLogger().warn("チェストを設置できなかった: {}", site);
             return;
         }
-        List<CrateTable.RolledItem> items = crateLevel.roll(random);
+        // 追加報酬を先に並べる。クレートの中身と合わせると 27 枠を超えることがあるので、
+        // 溢れさせるなら稀少な方ではなく通常枠の側にする
+        List<CrateTable.RolledItem> items = new ArrayList<>(extraDrops.roll(level, random));
+        int extras = items.size();
+        items.addAll(crateLevel.roll(random));
+        if (items.size() > CrateTable.CHEST_SLOTS) {
+            plugin.getSLF4JLogger().warn("報酬がチェストに入り切らない ({} 個中 {} 個を捨てた)",
+                    items.size(), items.size() - CrateTable.CHEST_SLOTS);
+        }
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < CrateTable.CHEST_SLOTS; i++) {
             slots.add(i);
@@ -305,6 +315,12 @@ public final class RaidManager {
         for (int i = 0; i < items.size() && i < slots.size(); i++) {
             chest.getBlockInventory().setItem(slots.get(i),
                     ItemBuilder.build(items.get(i), plugin.getSLF4JLogger()));
+        }
+        if (extras > 0) {
+            plugin.getSLF4JLogger().info("追加報酬 {} 個: {}", extras, items.subList(0, extras).stream()
+                    .map(item -> item.entry().custom() != null
+                            ? item.entry().custom() : item.entry().item().getKey().getKey())
+                    .toList());
         }
     }
 

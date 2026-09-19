@@ -9,7 +9,7 @@ raid:
   # マインクラフト時間の1日ごとに、この確率でレイドを1つ抽選する。
   # 当たったら、その日の中のランダムな時刻に発生する。固定時刻で判定すると
   # 昼か夜のどちらかに偏るので、時刻もここで散らしている。
-  daily-chance: 0.2
+  daily-chance: 0.5
 
   # 地図配布から失効までの時間 (tick)。マインクラフト時間の半日 = 12000。
   expire-ticks: 12000
@@ -227,10 +227,28 @@ levels:
           - {type: pillager, count: 1, weapon: crossbow}
           - {type: wither_skeleton, count: 2, weapon: iron_sword}
 
+# クレートの種類に依らない追加報酬。クレートの pool / featured の相対抽選とは別枠で、
+# レイド成功のたびに 1 エントリずつ独立に判定する。当たったものは報酬チェストに入る。
+# 書き方は crates のロットと同じ (custom / item / min / max / enchants / potion) で、
+# weight の代わりに chance を使う。
+#   chance:    排出率 (0 より大きく 1 以下)
+#   min-level: このレベル未満のレイドでは判定しない (既定 1)
+# 追加報酬はクレートの中身より先にスロットを取る。合わせて 27 を超えるときに削られるのは
+# クレートの側。
+extra-drops:
+  # モディファイアを選び直せる。アンカーが要らないのでレベルを問わない
+  - {custom: modifier_reset_ticket, chance: 0.08}
+  # リコールスクロール 3 種。アンカーが無いと使えないので低レベルでは出さない
+  - {custom: recall_scroll, min: 1, max: 2, chance: 0.30, min-level: 3}
+  - {custom: spatial_recall_scroll, chance: 0.15, min-level: 4}
+  - {custom: emergency_recall_scroll, chance: 0.10, min-level: 5}
+
 # 報酬クレート。チェスト1個 (27スロット)。slots の範囲でスロット数を決め、
 # 各スロットを pool から重み付きで独立に抽選する (重複あり)。
 # featured があるレベルでは、まず featured から1スロット確定で選ぶ (L4 以上の目玉枠)。
-# custom: 特別なアイテム (dimensional_chest / sniper_rifle / modifier_revival)。振る舞いは relics / Modifier が持つ。
+# custom: 特別なアイテム (dimensional_chest / sniper_rifle / explosive_bow / modifier_revival /
+#         modifier_reset_ticket / recall_scroll / spatial_recall_scroll / emergency_recall_scroll)。
+#         振る舞いは relics / Modifier / manchor が持つ。
 # エリトラ・ネザースター・メイスは出さない (エンドシティ・ウィザー・トライアルチャンバーのもの)。
 # ポーションは potion にバニラの PotionType 名を書く (strong_* / long_* も可)。
 crates:
@@ -571,6 +589,7 @@ crates:
           - {item: diamond_boots, weight: 4, enchants: {protection: 4, feather_falling: 4}}
           - {item: crossbow, weight: 3, enchants: {quick_charge: 3, multishot: 1}}
         featured:
+          - {custom: explosive_bow, weight: 2}
           - {item: diamond_sword, weight: 3, enchants: {sharpness: 5, unbreaking: 3, looting: 3}}
           - {item: bow, weight: 2, enchants: {power: 5, unbreaking: 3, infinity: 1}}
           - {item: diamond_chestplate, weight: 2, enchants: {protection: 4, unbreaking: 3}}
@@ -587,6 +606,7 @@ crates:
           - {item: bow, weight: 3, enchants: {power: 5, unbreaking: 3, flame: 1}}
         featured:
           - {custom: sniper_rifle, weight: 2}
+          - {custom: explosive_bow, weight: 2}
           - {item: netherite_sword, weight: 3, enchants: {sharpness: 5, unbreaking: 3}}
           - {item: netherite_chestplate, weight: 2, enchants: {protection: 4, unbreaking: 3}}
       "8":
